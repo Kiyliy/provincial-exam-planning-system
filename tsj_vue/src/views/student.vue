@@ -10,9 +10,8 @@
               </span>
             </template>
             <el-menu-item index="1-1">专业计划</el-menu-item>
-            <el-menu-item index="1-2">专业申报</el-menu-item>
-            <el-menu-item index="1-3">考次考点</el-menu-item>
-            <el-menu-item index="1-4">考试计划</el-menu-item>
+            <el-menu-item index="1-2" @click="handleMenuClick('majorInfo')">专业申报</el-menu-item>
+            <el-menu-item index="1-4" @click="handleMenuClick('testInfo')">考试计划</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="2">
             <template #title>
@@ -47,10 +46,136 @@
 
       <el-main>
         <el-scrollbar>
-          <div class="welcome-content">
+          <div class="welcome-content" v-if="!showMajorInfo && !showTestInfo">
             <h1>欢迎来到自学考试计划管理系统</h1>
             <p>请从左侧菜单选择您要使用的功能模块</p>
           </div>
+          <div class="major-info-header" v-if="showMajorInfo">
+            <h2>专业申报管理</h2>
+            <div class="status-summary">
+              <el-tag type="info" size="large" effect="plain">未申报: {{ getStatusCount('未申报') }}</el-tag>
+              <el-tag type="warning" size="large" effect="plain">已申报: {{ getStatusCount('已申报') }}</el-tag>
+              <el-tag type="success" size="large" effect="plain">已完成: {{ getStatusCount('已完成') }}</el-tag>
+            </div>
+          </div>
+          <el-table v-if="showMajorInfo" :data="majorInfoList" style="margin: 30px 0" :row-class-name="getRowClassName">
+            <el-table-column prop="id" label="学科ID" align="center"/>
+            <el-table-column prop="name" label="学科名称" align="center"/>
+            <el-table-column prop="major" label="开设专业" align="center"/>
+            <el-table-column prop="year" label="开设学年" align="center"/>
+            <el-table-column prop="term" label="开设学期" align="center"/>
+            <el-table-column prop="credit" label="学分" align="center"/>
+            <el-table-column prop="state" label="状态" align="center">
+              <template #default="scope">
+                <el-tag
+                  v-if="scope.row.state === '未申报'"
+                  type="info"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >未申报</el-tag>
+                <el-tag
+                  v-else-if="scope.row.state === '已申报'"
+                  type="warning"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >已申报</el-tag>
+                <el-tag
+                  v-else-if="scope.row.state === '已完成'"
+                  type="success"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >已完成</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" align="center">
+              <template #default="scope">
+                <el-button
+                  v-if="scope.row.state === '未申报'"
+                  type="primary"
+                  size="small"
+                  class="big-action-btn"
+                  @click="declareMajor(scope.row)"
+                  :disabled="scope.row.disabled"
+                >申报</el-button>
+                <el-button
+                  v-else-if="scope.row.state === '已申报'"
+                  type="danger"
+                  size="small"
+                  class="big-action-btn"
+                  @click="cancelMajor(scope.row)"
+                >取消</el-button>
+                <el-button
+                  v-else-if="scope.row.state === '已完成'"
+                  type="info"
+                  size="small"
+                  class="big-action-btn"
+                  @click="viewCompleted(scope.row)"
+                >查看</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="test-info-header" v-if="showTestInfo">
+            <h2>考试计划</h2>
+            <div class="test-status-summary">
+              <el-tag type="info" size="large" effect="plain">未考试: {{ getTestStatusCount('未考试') }}</el-tag>
+              <el-tag type="success" size="large" effect="plain">已考试: {{ getTestStatusCount('已考试') }}</el-tag>
+              <el-tag type="info" size="large" effect="plain">未安排: {{ getPlanStatusCount('未安排') }}</el-tag>
+              <el-tag type="warning" size="large" effect="plain">已安排: {{ getPlanStatusCount('已安排') }}</el-tag>
+            </div>
+          </div>
+          <el-table v-if="showTestInfo" :data="testInfoList" style="margin: 30px 0" :row-class-name="getTestRowClassName">
+            <el-table-column prop="majorId" label="学科ID" align="center" />
+            <el-table-column prop="name" label="考试学科" width="300" align="center" />
+            <el-table-column prop="plan" label="考试计划" align="center">
+              <template #default="scope">
+                <el-tag
+                  v-if="scope.row.plan === '未安排'"
+                  type="info"
+                  size="large"
+                  effect="plain"
+                  class="test-status-tag"
+                >未安排</el-tag>
+                <el-tag
+                  v-else-if="scope.row.plan === '已安排'"
+                  type="warning"
+                  size="large"
+                  effect="plain"
+                  class="test-status-tag"
+                >已安排</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="state" label="考试状态" align="center">
+              <template #default="scope">
+                <el-tag
+                  v-if="scope.row.state === '未考试'"
+                  type="info"
+                  size="large"
+                  effect="plain"
+                  class="test-status-tag"
+                >未考试</el-tag>
+                <el-tag
+                  v-else-if="scope.row.state === '已考试'"
+                  type="success"
+                  size="large"
+                  effect="plain"
+                  class="test-status-tag"
+                >已考试</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="place" label="考试地点" align="center" />
+            <el-table-column prop="start" label="考试日期" width = 300 align="center" />
+            <el-table-column prop="when" label="考试时间" width = 200 align="center">
+              <template #default="scope">
+                <el-tag v-if="scope.row.when === '1'" type="danger" class="test-status-tag">第一堂</el-tag>
+                <el-tag v-else-if="scope.row.when === '2'" type="danger" class="test-status-tag">第二堂</el-tag>
+                <el-tag v-else-if="scope.row.when === '3'" type="danger" class="test-status-tag">第三堂</el-tag>
+                <span v-else>{{ scope.row.when }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
         </el-scrollbar>
       </el-main>
     </el-container>
@@ -100,6 +225,7 @@ export default {
   data() {
     return {
       username: this.$route.query.username || '',
+      userId: null,
       realName: '',
       editDialog: false,
       editForm: { id: null, username: '', password: '', realName: '', phone: '', userType: null },
@@ -127,7 +253,11 @@ export default {
         realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
         phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
         userType: [{ required: true, message: '请选择用户类型', trigger: 'change' }]
-      }
+      },
+      majorInfoList: [],
+      showMajorInfo: false,
+      testInfoList: [],
+      showTestInfo: false,
     }
   },
   methods: {
@@ -171,10 +301,158 @@ export default {
           ElMessage.error('修改失败');
         });
       });
+    },
+    async handleMenuClick(menu) {
+      this.showMajorInfo = false;
+      this.showTestInfo = false;
+      if (menu === 'majorInfo') {
+        let majorApi = '';
+        if (this.userId === 2) {
+          majorApi = 'http://localhost:8080/api/majorInfo2/getMajorInfo2';
+        } else if (this.userId === 3) {
+          majorApi = 'http://localhost:8080/api/majorInfo3/getMajorInfo3';
+        } else {
+          this.majorInfoList = [];
+          this.showMajorInfo = true;
+          ElMessage.info('暂无信息');
+          return;
+        }
+        // 获取专业申报信息
+        const majorRes = await axios.get(majorApi);
+        let majors = Array.isArray(majorRes.data) ? majorRes.data : [];
+        // 获取考试计划
+        const testRes = await axios.get('http://localhost:8080/api/testInfo/getTestInfoWithMajors');
+        const tests = Array.isArray(testRes.data) ? testRes.data : [];
+        // 处理每个学科的申报按钮禁用和状态
+        majors = majors.map(m => {
+          const test = tests.find(t => t.majorId === m.id);
+          if (test && test.state === '已考试') {
+            if (m.state === '未申报') {
+              return { ...m, disabled: true };
+            } else if (m.state === '已申报') {
+              // 自动更新为已完成
+              this.updateMajorStatusToCompleted(m, majorApi);
+              return { ...m, state: '已完成', disabled: true };
+            }
+          } else if (test && test.state === '未考试' && m.state === '已完成') {
+            // 容错：如果状态为已完成但考试未考试，自动回退为已申报
+            this.updateMajorStatusToDeclared(m, majorApi);
+            return { ...m, state: '已申报', disabled: false };
+          }
+          return { ...m, disabled: false };
+        });
+        this.majorInfoList = majors;
+        this.showMajorInfo = true;
+      } else if (menu === 'testInfo') {
+        let majorApi = '';
+        if (this.userId === 2) {
+          majorApi = 'http://localhost:8080/api/majorInfo2/getMajorInfo2';
+        } else if (this.userId === 3) {
+          majorApi = 'http://localhost:8080/api/majorInfo3/getMajorInfo3';
+        } else {
+          this.testInfoList = [];
+          this.showTestInfo = true;
+          ElMessage.info('暂无信息');
+          return;
+        }
+        axios.get(majorApi)
+          .then(res => {
+            const majors = Array.isArray(res.data) ? res.data : [];
+            const filteredMajors = majors.filter(m => m.state === '已申报' || m.state === '已完成');
+            const majorIds = filteredMajors.map(m => m.id);
+            if (majorIds.length === 0) {
+              this.testInfoList = [];
+              this.showTestInfo = true;
+              return;
+            }
+            axios.get('http://localhost:8080/api/testInfo/getTestInfoWithMajors')
+              .then(res2 => {
+                const allTests = Array.isArray(res2.data) ? res2.data : [];
+                const majorIdsNum = majorIds.map(id => Number(id));
+                console.log('userId', this.userId);
+                console.log('majorIds', majorIdsNum);
+                console.log('allTests', allTests);
+                this.testInfoList = allTests.filter(t => majorIdsNum.includes(Number(t.majorId)));
+                this.showTestInfo = true;
+              })
+              .catch(() => {
+                ElMessage.error('获取考试计划失败');
+              });
+          })
+          .catch(() => {
+            ElMessage.error('获取专业申报信息失败');
+          });
+      }
+    },
+    async updateMajorStatusToCompleted(row, majorApi) {
+      const updated = { ...row, state: '已完成' };
+      await axios.post(majorApi.replace('get', 'update'), updated);
+    },
+    async updateMajorStatusToDeclared(row, majorApi) {
+      const updated = { ...row, state: '已申报' };
+      await axios.post(majorApi.replace('get', 'update'), updated);
+    },
+    async declareMajor(row) {
+      // 根据userId选择接口
+      const updated = { ...row, state: '已申报' };
+      let url = '';
+      if (this.userId === 2) {
+        url = 'http://localhost:8080/api/majorInfo2/updateMajorInfo2';
+      } else if (this.userId === 3) {
+        url = 'http://localhost:8080/api/majorInfo3/updateMajorInfo3';
+      } else {
+        ElMessage.error('无权限申报');
+        return;
+      }
+      await axios.post(url, updated);
+      row.state = '已申报';
+      // 重新处理禁用和状态
+      this.handleMenuClick('majorInfo');
+      ElMessage.success('申报成功');
+    },
+    cancelMajor(row) {
+      // 根据userId选择接口
+      const updated = { ...row, state: '未申报' };
+      let url = '';
+      if (this.userId === 2) {
+        url = 'http://localhost:8080/api/majorInfo2/updateMajorInfo2';
+      } else if (this.userId === 3) {
+        url = 'http://localhost:8080/api/majorInfo3/updateMajorInfo3';
+      } else {
+        ElMessage.error('无权限取消');
+        return;
+      }
+      axios.post(url, updated)
+        .then(() => {
+          row.state = '未申报';
+          ElMessage.success('已取消申报');
+        })
+        .catch(() => {
+          ElMessage.error('取消失败');
+        });
+    },
+    getStatusCount(status) {
+      return this.majorInfoList.filter(item => item.state === status).length;
+    },
+    getRowClassName({ row }) {
+      if (row.state === '已完成') return 'completed-row';
+      if (row.state === '已申报') return 'declared-row';
+      return 'undeclared-row';
+    },
+    getTestStatusCount(status) {
+      return this.testInfoList.filter(item => item.state === status).length;
+    },
+    getPlanStatusCount(plan) {
+      return this.testInfoList.filter(item => item.plan === plan).length;
+    },
+    getTestRowClassName({ row }) {
+      if (row.state === '已考试') return 'test-completed-row';
+      if (row.plan === '已安排') return 'test-arranged-row';
+      return 'test-unarranged-row';
     }
   },
   mounted() {
-    // 自动获取当前用户真实姓名
+    // 自动获取当前用户真实姓名和id
     axios.get('http://localhost:8080/api/user/getUser').then(res => {
       const users = Array.isArray(res.data) ? res.data.map(u => ({
         ...u,
@@ -183,6 +461,7 @@ export default {
       })) : [];
       const currentUser = users.find(u => u.username === this.username);
       if (currentUser) {
+        this.userId = currentUser.id;
         this.realName = currentUser.realName;
       }
     });
@@ -259,5 +538,154 @@ export default {
 .welcome-content p {
   font-size: 1.2rem;
   color: #666;
+}
+::v-deep .el-table {
+  font-size: 1.5rem !important;
+}
+::v-deep .el-table th, 
+::v-deep .el-table td {
+  font-size: 1.5rem !important;
+}
+::v-deep .big-action-btn {
+  font-size: 1.5rem !important;
+  height: 2.25em !important;
+  min-width: 3.75em !important;
+  padding: 0 1.5em !important;
+}
+
+.major-info-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.major-info-header h2 {
+  margin: 0 0 15px 0;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.status-summary {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.status-summary .el-tag {
+  font-size: 1.2rem;
+  padding: 8px 16px;
+}
+
+::v-deep .status-tag {
+  font-size: 1.8rem !important;
+  font-weight: bold !important;
+  padding: 15px 20px !important;
+  border-width: 2px !important;
+  border-radius: 8px !important;
+  min-height: 48px !important;
+  line-height: 1.8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+::v-deep .status-tag.el-tag--info {
+  border-color: #909399 !important;
+  color: #606266 !important;
+}
+
+::v-deep .status-tag.el-tag--warning {
+  border-color: #e6a23c !important;
+  color: #e6a23c !important;
+}
+
+::v-deep .status-tag.el-tag--success {
+  border-color: #67c23a !important;
+  color: #67c23a !important;
+}
+
+::v-deep .completed-row {
+  background-color: #f0f9ff !important;
+}
+
+::v-deep .declared-row {
+  background-color: #fff7ed !important;
+}
+
+::v-deep .undeclared-row {
+  background-color: #fafafa !important;
+}
+
+::v-deep .el-table .el-table__row:hover {
+  background-color: #e6f7ff !important;
+}
+
+::v-deep .el-table th {
+  background-color: #f5f7fa !important;
+  color: #606266 !important;
+  font-weight: bold !important;
+}
+
+.test-info-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.test-info-header h2 {
+  margin: 0 0 15px 0;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.test-status-summary {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.test-status-summary .el-tag {
+  font-size: 1.2rem;
+  padding: 8px 16px;
+}
+
+::v-deep .test-status-tag {
+  font-size: 1.8rem !important;
+  font-weight: bold !important;
+  padding: 15px 20px !important;
+  border-width: 2px !important;
+  border-radius: 8px !important;
+  min-height: 48px !important;
+  line-height: 1.8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+::v-deep .test-status-tag.el-tag--info {
+  border-color: #909399 !important;
+  color: #606266 !important;
+}
+::v-deep .test-status-tag.el-tag--success {
+  border-color: #67c23a !important;
+  color: #67c23a !important;
+}
+::v-deep .test-status-tag.el-tag--warning {
+  border-color: #e6a23c !important;
+  color: #e6a23c !important;
+}
+::v-deep .test-completed-row {
+  background-color: #f0f9ff !important;
+}
+::v-deep .test-arranged-row {
+  background-color: #fff7ed !important;
+}
+::v-deep .test-unarranged-row {
+  background-color: #fafafa !important;
+}
+::v-deep .test-status-tag.el-tag--danger {
+  border-color: #f56c6c !important;
+  color: #f56c6c !important;
 }
 </style> 
