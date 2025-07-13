@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tsj.Mapper.MajorInfo2Mapper">
+
+    <resultMap id="BaseMajorInfo2" type="com.tsj.project.MajorInfo2">
+        <id property="id" column="id" jdbcType="INTEGER"></id>
+        <result property="name" column="name" jdbcType="VARCHAR"></result>
+        <result property="major" column="major" jdbcType="VARCHAR"></result>
+        <result property="year" column="year" jdbcType="VARCHAR"></result>
+        <result property="term" column="term" jdbcType="VARCHAR"></result>
+        <result property="credit" column="credit" jdbcType="TINYINT"></result>
+        <result property="state" column="state" jdbcType="VARCHAR"></result>
+    </resultMap>
+
+    <select id="getMajorInfo2" resultMap="BaseMajorInfo2">
+        select * from major_info2
+    </select>
+
+    <insert id="insertMajorInfo2" parameterType="com.tsj.project.MajorInfo2">
+        insert into major_info2(name, major, year, term, credit, state)
+        values(#{name}, #{major}, #{year}, #{term}, #{credit}, #{state})
+    </insert>
+
+    <update id="updateMajorInfo2" parameterType="com.tsj.project.MajorInfo2">
+        update major_info2 set name = #{name}, major = #{major}, year = #{year},
+        term = #{term}, credit = #{credit}, state = #{state} where id = #{id}
+    </update>
+
+    <delete id="deleteMajorInfo2" parameterType="java.lang.Integer">
+        delete from major_info2 where id = #{id}
+    </delete>
+
+    <select id="getMajorInfo2ById" parameterType="java.lang.Integer" resultMap="BaseMajorInfo2">
+        select * from major_info2 where id = #{id}
+    </select>
+
+</mapper> 
