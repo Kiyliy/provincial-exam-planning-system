@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tsj.Mapper.InternshipInfoMapper">
+    <!-- 使用resultMap来明确定义映射关系 -->
+    <resultMap id="internshipInfoMap" type="com.tsj.project.InternshipInfo">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="direction" column="direction"/>
+        <result property="location" column="location"/>
+        <result property="start" column="start_date" jdbcType="VARCHAR"/>
+        <result property="duration" column="duration"/>
+        <result property="documentUrl" column="document_url"/>
+        <result property="company" column="company"/>
+        <result property="contactPerson" column="contact_person"/>
+        <result property="contactPhone" column="contact_phone"/>
+        <result property="status" column="status"/>
+        <result property="state2" column="state2"/>
+        <result property="state3" column="state3"/>
+        <result property="state4" column="state4"/>
+    </resultMap>
+
+    <select id="getInternshipInfo" resultMap="internshipInfoMap">
+        SELECT * FROM internship_info
+    </select>
+    
+    <select id="getInternshipInfoById" parameterType="integer" resultMap="internshipInfoMap">
+        SELECT * FROM internship_info WHERE id = #{id}
+    </select>
+    
+    <select id="getInternshipInfoByStatus" parameterType="string" resultMap="internshipInfoMap">
+        SELECT * FROM internship_info WHERE status = #{status}
+    </select>
+    
+    <!-- 根据用户ID查询实习报名状态 -->
+    <select id="getInternshipInfoByUserId" resultMap="internshipInfoMap">
+        SELECT * FROM internship_info 
+        <where>
+            <if test="userId == 2">
+                state2 = #{state}
+            </if>
+            <if test="userId == 3">
+                state3 = #{state}
+            </if>
+            <if test="userId == 4">
+                state4 = #{state}
+            </if>
+        </where>
+    </select>
+    
+    <insert id="insertInternshipInfo" parameterType="com.tsj.project.InternshipInfo">
+        INSERT INTO internship_info (name, direction, location, start_date, duration, document_url, company, contact_person, contact_phone, status, state2, state3, state4)
+        VALUES (#{name}, #{direction}, #{location}, #{start, jdbcType=VARCHAR}, #{duration}, #{documentUrl}, #{company}, #{contactPerson}, #{contactPhone}, #{status}, #{state2}, #{state3}, #{state4})
+    </insert>
+    
+    <update id="updateInternshipInfo" parameterType="com.tsj.project.InternshipInfo">
+        UPDATE internship_info
+        SET name = #{name}, direction = #{direction}, location = #{location},
+            start_date = #{start, jdbcType=VARCHAR}, duration = #{duration}, document_url = #{documentUrl},
+            company = #{company}, contact_person = #{contactPerson}, contact_phone = #{contactPhone}, 
+            status = #{status}, state2 = #{state2}, state3 = #{state3}, state4 = #{state4}
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 更新用户的实习报名状态 -->
+    <update id="updateInternshipInfoState">
+        UPDATE internship_info
+        <set>
+            <if test="userId == 2">
+                state2 = #{state}
+            </if>
+            <if test="userId == 3">
+                state3 = #{state}
+            </if>
+            <if test="userId == 4">
+                state4 = #{state}
+            </if>
+        </set>
+        WHERE id = #{internshipId}
+    </update>
+    
+    <delete id="deleteInternshipInfo" parameterType="integer">
+        DELETE FROM internship_info WHERE id = #{id}
+    </delete>
+</mapper> 

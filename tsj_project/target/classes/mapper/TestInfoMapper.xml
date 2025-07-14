@@ -13,24 +13,18 @@
         <result property="when" column="when" jdbcType="VARCHAR"></result>
     </resultMap>
 
+    <!-- 合表后只保留major_info相关的association -->
     <resultMap id="TestInfoWithMajors" type="com.tsj.project.TestInfo" extends="BaseTestInfo">
-        <association property="majorInfo2" javaType="com.tsj.project.MajorInfo2">
-            <id property="id" column="major2_id" jdbcType="INTEGER"/>
-            <result property="name" column="major2_name" jdbcType="VARCHAR"/>
-            <result property="major" column="major2_major" jdbcType="VARCHAR"/>
-            <result property="year" column="major2_year" jdbcType="VARCHAR"/>
-            <result property="term" column="major2_term" jdbcType="VARCHAR"/>
-            <result property="credit" column="major2_credit" jdbcType="INTEGER"/>
-            <result property="state" column="major2_state" jdbcType="VARCHAR"/>
-        </association>
-        <association property="majorInfo3" javaType="com.tsj.project.MajorInfo3">
-            <id property="id" column="major3_id" jdbcType="INTEGER"/>
-            <result property="name" column="major3_name" jdbcType="VARCHAR"/>
-            <result property="major" column="major3_major" jdbcType="VARCHAR"/>
-            <result property="year" column="major3_year" jdbcType="VARCHAR"/>
-            <result property="term" column="major3_term" jdbcType="VARCHAR"/>
-            <result property="credit" column="major3_credit" jdbcType="INTEGER"/>
-            <result property="state" column="major3_state" jdbcType="VARCHAR"/>
+        <association property="majorInfo" javaType="com.tsj.project.MajorInfo">
+            <id property="id" column="major_id" jdbcType="INTEGER"/>
+            <result property="name" column="major_name" jdbcType="VARCHAR"/>
+            <result property="major" column="major_major" jdbcType="VARCHAR"/>
+            <result property="year" column="major_year" jdbcType="VARCHAR"/>
+            <result property="term" column="major_term" jdbcType="VARCHAR"/>
+            <result property="credit" column="major_credit" jdbcType="INTEGER"/>
+            <result property="state2" column="major_state2" jdbcType="VARCHAR"/>
+            <result property="state3" column="major_state3" jdbcType="VARCHAR"/>
+            <result property="state4" column="major_state4" jdbcType="VARCHAR"/>
         </association>
     </resultMap>
 
@@ -40,11 +34,9 @@
 
     <select id="getTestInfoWithMajors" resultMap="TestInfoWithMajors">
         select t.*,
-               m2.id as major2_id, m2.name as major2_name, m2.major as major2_major, m2.year as major2_year, m2.term as major2_term, m2.credit as major2_credit, m2.state as major2_state,
-               m3.id as major3_id, m3.name as major3_name, m3.major as major3_major, m3.year as major3_year, m3.term as major3_term, m3.credit as major3_credit, m3.state as major3_state
+               m.id as major_id, m.name as major_name, m.major as major_major, m.year as major_year, m.term as major_term, m.credit as major_credit, m.state2 as major_state2, m.state3 as major_state3, m.state4 as major_state4
         from test_info t
-        left join major_info2 m2 on 1=1
-        left join major_info3 m3 on 1=1
+        left join major_info m on t.major_id = m.id
     </select>
 
     <insert id="insertTestInfo" parameterType="com.tsj.project.TestInfo">
@@ -67,11 +59,9 @@
 
     <select id="getTestInfoByMajorId" parameterType="java.lang.Integer" resultMap="TestInfoWithMajors">
         select t.*,
-               m2.id as major2_id, m2.name as major2_name, m2.major as major2_major, m2.year as major2_year, m2.term as major2_term, m2.credit as major2_credit, m2.state as major2_state,
-               m3.id as major3_id, m3.name as major3_name, m3.major as major3_major, m3.year as major3_year, m3.term as major3_term, m3.credit as major3_credit, m3.state as major3_state
+               m.id as major_id, m.name as major_name, m.major as major_major, m.year as major_year, m.term as major_term, m.credit as major_credit, m.state2 as major_state2, m.state3 as major_state3, m.state4 as major_state4
         from test_info t
-        left join major_info2 m2 on 1=1
-        left join major_info3 m3 on 1=1
+        left join major_info m on t.major_id = m.id
         where t.major_id = #{majorId}
     </select>
 
