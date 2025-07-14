@@ -2,26 +2,32 @@
   <el-container class="layout-container-demo" style="height: 100vh">
     <el-aside width="200px">
       <el-scrollbar>
-        <el-menu :default-openeds="['1', '2']">
+        <el-menu :default-openeds="['1', '2', '3']">
           <el-sub-menu index="1">
             <template #title>
               <span class="main-menu-title">
                 <el-icon><Document /></el-icon>计划管理
               </span>
             </template>
-            <el-menu-item index="1-1">专业计划</el-menu-item>
             <el-menu-item index="1-2" @click="handleMenuClick('majorInfo')">专业申报</el-menu-item>
             <el-menu-item index="1-4" @click="handleMenuClick('testInfo')">考试计划</el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="2">
+
+          <el-sub-menu index="3">
             <template #title>
               <span class="main-menu-title">
-                <el-icon><School /></el-icon>助学管理
+                <el-icon><Connection /></el-icon>校外拓展
               </span>
             </template>
-            <el-menu-item index="2-1">校外教学</el-menu-item>
-            <el-menu-item index="2-2">服务中心</el-menu-item>
+            <el-menu-item index="3-1" @click="handleMenuClick('internship')">校外实习</el-menu-item>
+            <el-menu-item index="3-2">校外竞赛</el-menu-item>
+            <el-menu-item index="3-3">学术交流</el-menu-item>
           </el-sub-menu>
+          <el-menu-item index="4" @click="handleMenuClick('serviceCenter')">
+            <span class="main-menu-title">
+              <el-icon><Service /></el-icon>服务中心
+            </span>
+          </el-menu-item>
         </el-menu>
       </el-scrollbar>
     </el-aside>
@@ -46,26 +52,78 @@
 
       <el-main>
         <el-scrollbar>
-          <div class="welcome-content" v-if="!showMajorInfo && !showTestInfo">
+          <div class="welcome-content" v-if="!showMajorInfo && !showTestInfo && !showServiceCenter && !showInternship">
             <h1>欢迎来到自学考试计划管理系统</h1>
             <p>请从左侧菜单选择您要使用的功能模块</p>
+          </div>
+          <div class="service-center-container" v-if="showServiceCenter">
+            <div class="service-center-header">
+              <h2>学习服务中心</h2>
+            </div>
+            <div class="service-grid">
+              <div class="service-card" v-for="(service, index) in serviceList" :key="index" @click="handleServiceClick(service)">
+                <el-icon class="service-icon">
+                  <component :is="service.icon"></component>
+                </el-icon>
+                <div class="service-name">{{ service.name }}</div>
+                <div class="service-desc">{{ service.description }}</div>
+              </div>
+            </div>
           </div>
           <div class="major-info-header" v-if="showMajorInfo">
             <h2>专业申报管理</h2>
             <div class="status-summary">
-              <el-tag type="info" size="large" effect="plain">未申报: {{ getStatusCount('未申报') }}</el-tag>
-              <el-tag type="warning" size="large" effect="plain">已申报: {{ getStatusCount('已申报') }}</el-tag>
-              <el-tag type="success" size="large" effect="plain">已完成: {{ getStatusCount('已完成') }}</el-tag>
+              <el-tag 
+                type="primary" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': statusFilter === 'all' }"
+                @click="handleFilterChange('all')"
+                class="clickable-tag"
+              >全部</el-tag>
+              <el-tag 
+                type="info" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': statusFilter === '未申报' }"
+                @click="handleFilterChange('未申报')"
+                class="clickable-tag"
+              >未申报: {{ getStatusCount('未申报') }}</el-tag>
+              <el-tag 
+                type="warning" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': statusFilter === '已申报' }"
+                @click="handleFilterChange('已申报')"
+                class="clickable-tag"
+              >已申报: {{ getStatusCount('已申报') }}</el-tag>
+              <el-tag 
+                type="success" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': statusFilter === '已完成' }"
+                @click="handleFilterChange('已完成')"
+                class="clickable-tag"
+              >已完成: {{ getStatusCount('已完成') }}</el-tag>
+            </div>
+            <div class="search-box">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索学科ID或名称"
+                prefix-icon="Search"
+                clearable
+                @input="handleSearch"
+              ></el-input>
             </div>
           </div>
-          <el-table v-if="showMajorInfo" :data="majorInfoList" style="margin: 30px 0" :row-class-name="getRowClassName">
+          <el-table v-if="showMajorInfo" :data="filteredMajorInfoList.length > 0 || searchQuery ? filteredMajorInfoList : majorInfoList" style="margin: 30px 0" :row-class-name="getRowClassName">
             <el-table-column prop="id" label="学科ID" align="center"/>
             <el-table-column prop="name" label="学科名称" align="center"/>
             <el-table-column prop="major" label="开设专业" align="center"/>
             <el-table-column prop="year" label="开设学年" align="center"/>
             <el-table-column prop="term" label="开设学期" align="center"/>
             <el-table-column prop="credit" label="学分" align="center"/>
-            <el-table-column prop="state" label="状态" align="center">
+            <el-table-column label="状态" align="center">
               <template #default="scope">
                 <el-tag
                   v-if="scope.row.state === '未申报'"
@@ -120,13 +178,58 @@
           <div class="test-info-header" v-if="showTestInfo">
             <h2>考试计划</h2>
             <div class="test-status-summary">
-              <el-tag type="info" size="large" effect="plain">未考试: {{ getTestStatusCount('未考试') }}</el-tag>
-              <el-tag type="success" size="large" effect="plain">已考试: {{ getTestStatusCount('已考试') }}</el-tag>
-              <el-tag type="info" size="large" effect="plain">未安排: {{ getPlanStatusCount('未安排') }}</el-tag>
-              <el-tag type="warning" size="large" effect="plain">已安排: {{ getPlanStatusCount('已安排') }}</el-tag>
+              <el-tag 
+                type="primary" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': testStatusFilter === 'all' }"
+                @click="handleTestFilterChange('all')"
+                class="clickable-tag"
+              >全部</el-tag>
+              <el-tag 
+                type="info" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': testStatusFilter === 'state:未考试' }"
+                @click="handleTestFilterChange('state:未考试')"
+                class="clickable-tag"
+              >未考试: {{ getTestStatusCount('未考试') }}</el-tag>
+              <el-tag 
+                type="success" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': testStatusFilter === 'state:已考试' }"
+                @click="handleTestFilterChange('state:已考试')"
+                class="clickable-tag"
+              >已考试: {{ getTestStatusCount('已考试') }}</el-tag>
+              <el-tag 
+                type="info" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': testStatusFilter === 'plan:未安排' }"
+                @click="handleTestFilterChange('plan:未安排')"
+                class="clickable-tag"
+              >未安排: {{ getPlanStatusCount('未安排') }}</el-tag>
+              <el-tag 
+                type="warning" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': testStatusFilter === 'plan:已安排' }"
+                @click="handleTestFilterChange('plan:已安排')"
+                class="clickable-tag"
+              >已安排: {{ getPlanStatusCount('已安排') }}</el-tag>
+            </div>
+            <div class="search-box">
+              <el-input
+                v-model="testSearchQuery"
+                placeholder="搜索考试学科ID或名称"
+                prefix-icon="Search"
+                clearable
+                @input="handleTestSearch"
+              ></el-input>
             </div>
           </div>
-          <el-table v-if="showTestInfo" :data="testInfoList" style="margin: 30px 0" :row-class-name="getTestRowClassName">
+          <el-table v-if="showTestInfo" :data="filteredTestInfoList.length > 0 || testSearchQuery ? filteredTestInfoList : testInfoList" style="margin: 30px 0" :row-class-name="getTestRowClassName">
             <el-table-column prop="majorId" label="学科ID" align="center" />
             <el-table-column prop="name" label="考试学科" width="300" align="center" />
             <el-table-column prop="plan" label="考试计划" align="center">
@@ -176,6 +279,202 @@
               </template>
             </el-table-column>
           </el-table>
+          <template v-if="showTestInfo && testInfoList.length === 0">
+            <div style="text-align:center;color:#888;margin:30px 0;font-size:1.2em;">
+              暂无考试计划
+            </div>
+          </template>
+          <!-- 实习信息部分 -->
+          <div class="internship-info-header" v-if="showInternship">
+            <h2>校外实习信息</h2>
+            <div class="status-summary">
+              <el-tag 
+                type="primary" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': internshipStatusFilter === 'all' }"
+                @click="handleInternshipFilterChange('all')"
+                class="clickable-tag"
+              >全部</el-tag>
+              <el-tag 
+                type="success" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': internshipStatusFilter === 'status:招募中' }"
+                @click="handleInternshipFilterChange('status:招募中')"
+                class="clickable-tag"
+              >招募中: {{ getInternshipRecruitingCount() }}</el-tag>
+              <el-tag 
+                type="info" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': internshipStatusFilter === '未报名' }"
+                @click="handleInternshipFilterChange('未报名')"
+                class="clickable-tag"
+              >未报名: {{ getInternshipStatusCount('未报名') }}</el-tag>
+              <el-tag 
+                type="warning" 
+                size="large" 
+                effect="plain"
+                :class="{ 'active-filter': internshipStatusFilter === '已报名' }"
+                @click="handleInternshipFilterChange('已报名')"
+                class="clickable-tag"
+              >已报名: {{ getInternshipStatusCount('已报名') }}</el-tag>
+            </div>
+            <div class="search-box">
+              <el-input
+                v-model="internshipSearchQuery"
+                placeholder="搜索实习名称或方向"
+                prefix-icon="Search"
+                clearable
+                @input="handleInternshipSearch"
+              ></el-input>
+            </div>
+          </div>
+
+          <el-table v-if="showInternship" :data="filteredInternshipList.length > 0 || internshipSearchQuery ? filteredInternshipList : internshipInfoList" style="margin: 30px 0" :row-class-name="getInternshipRowClassName">
+            <el-table-column prop="id" label="ID" align="center" width="80"/>
+            <el-table-column prop="name" label="实习名称" align="center" />
+            <el-table-column prop="location" label="实习地点" align="center"/>
+            <el-table-column prop="direction" label="实习方向" align="center"/>
+            <el-table-column label="招募状态" align="center" width="200">
+              <template #default="scope">
+                <el-tag
+                  :type="scope.row.status === '招募中' ? 'success' : 'info'"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >{{ scope.row.status }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="报名状态" align="center" width="200">
+              <template #default="scope">
+                <el-tag
+                  v-if="scope.row.userState === '未报名'"
+                  type="info"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >未报名</el-tag>
+                <el-tag
+                  v-else-if="scope.row.userState === '已报名'"
+                  type="warning"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >已报名</el-tag>
+                <el-tag
+                  v-else-if="scope.row.userState === '已通过'"
+                  type="success"
+                  size="large"
+                  effect="plain"
+                  class="status-tag"
+                >已通过</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" align="center" width="400">
+              <template #default="scope">
+                <el-button
+                  v-if="scope.row.userState === '未报名' && scope.row.status === '招募中'"
+                  type="primary"
+                  size="small"
+                  class="big-action-btn"
+                  @click="applyInternship(scope.row)"
+                >报名</el-button>
+                <el-button
+                  v-if="scope.row.userState === '未报名' && scope.row.status === '已结束'"
+                  type="primary"
+                  size="small"
+                  class="big-action-btn"
+                  disabled
+                  style="background: #e4e7ed; color: #bbb; border-color: #e4e7ed; cursor: not-allowed;"
+>报名</el-button>
+<el-button
+  v-if="scope.row.userState === '已报名' && (scope.row.status === '招募中' || scope.row.status === '已结束')"
+  type="danger"
+  size="small"
+  class="big-action-btn"
+  @click="cancelInternship(scope.row)"
+>取消</el-button>
+                <el-button
+                  v-if="scope.row.userState === '已通过'"
+                  type="success"
+                  size="small"
+                  class="big-action-btn"
+                  @click="viewInternshipDetails(scope.row)"
+                >查看</el-button>
+                <el-button
+                  type="info"
+                  size="small"
+                  class="big-action-btn"
+                  @click="viewInternshipDetails(scope.row)"
+                >详情</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <el-dialog v-model="internshipDetailDialog" :title="currentInternship.name + ' - 详细信息'" width="600px">
+            <el-form label-position="left" label-width="100px">
+              <el-form-item label="实习名称">
+                <span>{{ currentInternship.name }}</span>
+              </el-form-item>
+              <el-form-item label="实习方向">
+                <span>{{ currentInternship.direction }}</span>
+              </el-form-item>
+              <el-form-item label="实习地点">
+                <span>{{ currentInternship.location }}</span>
+              </el-form-item>
+              <el-form-item label="开始时间">
+                <span>{{ formatDate(currentInternship.startDate) }}</span>
+              </el-form-item>
+              <el-form-item label="持续时间">
+                <span>{{ currentInternship.duration }}天</span>
+              </el-form-item>
+              <el-form-item label="实习单位">
+                <span>{{ currentInternship.company }}</span>
+              </el-form-item>
+              <el-form-item label="联系人">
+                <span>{{ currentInternship.contactPerson }}</span>
+              </el-form-item>
+              <el-form-item label="联系电话">
+                <span>{{ currentInternship.contactPhone }}</span>
+              </el-form-item>
+              <el-form-item label="招募状态">
+                <el-tag :type="currentInternship.status === '招募中' ? 'success' : 'info'">
+                  {{ currentInternship.status }}
+                </el-tag>
+              </el-form-item>
+              <el-form-item label="报名状态">
+                <el-tag :type="getStatusTagType(currentInternship.userState)">
+                  {{ currentInternship.userState }}
+                </el-tag>
+              </el-form-item>
+              <el-form-item v-if="currentInternship.documentUrl" label="相关文档">
+                <el-button type="primary" size="small" @click="downloadDocument(currentInternship.documentUrl)">
+                  下载文档
+                </el-button>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <div class="dialog-footer">
+                <el-button @click="internshipDetailDialog = false">关闭</el-button>
+                <el-button 
+                  v-if="currentInternship.userState === '未报名' && currentInternship.status === '招募中'"
+                  type="primary"
+                  @click="applyInternshipFromDialog"
+                >
+                  报名
+                </el-button>
+                <el-button 
+                  v-if="currentInternship.userState === '已报名' && currentInternship.status === '招募中'"
+                  type="danger"
+                  @click="cancelInternshipFromDialog"
+                >
+                  取消报名
+                </el-button>
+              </div>
+            </template>
+          </el-dialog>
         </el-scrollbar>
       </el-main>
     </el-container>
@@ -211,22 +510,104 @@
 </template>
 
 <script>
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
-import { Document, School, Setting } from '@element-plus/icons-vue'
+import { Document, School, Setting, Search, Notebook, Reading, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, Connection, Service, ChatDotRound } from '@element-plus/icons-vue'
 
 export default {
   name: 'Student',
   components: {
     Document,
     School,
-    Setting
+    Setting,
+    Search,
+    Notebook,
+    Reading,
+    Money,
+    Bicycle,
+    Coffee,
+    Collection,
+    OfficeBuilding,
+    Promotion,
+    Wallet,
+    Connection,
+    Service,
+    ChatDotRound
   },
   data() {
     return {
       username: this.$route.query.username || '',
       userId: null,
       realName: '',
+      searchQuery: '',
+      statusFilter: 'all',
+      filteredMajorInfoList: [],
+      testSearchQuery: '',
+      testStatusFilter: 'all',
+      filteredTestInfoList: [],
+      showServiceCenter: false,
+      serviceList: [
+        {
+          name: '勤工俭学',
+          icon: 'Money',
+          description: '校内外勤工俭学岗位信息及申请',
+          path: '/work-study'
+        },
+        {
+          name: '助学金',
+          icon: 'Wallet',
+          description: '国家助学金、奖学金申请及发放查询',
+          path: '/scholarship'
+        },
+        {
+          name: '教学资料',
+          icon: 'Reading',
+          description: '课程资料、教材电子版下载',
+          path: '/materials'
+        },
+        {
+          name: '学习辅导',
+          icon: 'Notebook',
+          description: '一对一在线辅导和答疑',
+          path: '/tutoring'
+        },
+        {
+          name: '校园活动',
+          icon: 'Promotion',
+          description: '各类校园文体活动报名',
+          path: '/activities'
+        },
+        {
+          name: '考试培训',
+          icon: 'Collection',
+          description: '考前培训和模拟考试',
+          path: '/training'
+        },
+        {
+          name: '校园设施',
+          icon: 'OfficeBuilding',
+          description: '教室、实验室等设施预约',
+          path: '/facilities'
+        },
+        {
+          name: '交通出行',
+          icon: 'Bicycle',
+          description: '校车时刻表及校园出行导航',
+          path: '/transportation'
+        },
+        {
+          name: '生活服务',
+          icon: 'Coffee',
+          description: '食堂、超市等生活服务信息',
+          path: '/life-services'
+        },
+        {
+          name: '联系我们',
+          icon: 'ChatDotRound',
+          description: '联系管理员、教师或技术支持',
+          path: '/contact'
+        }
+      ],
       editDialog: false,
       editForm: { id: null, username: '', password: '', realName: '', phone: '', userType: null },
       editRules: {
@@ -258,6 +639,13 @@ export default {
       showMajorInfo: false,
       testInfoList: [],
       showTestInfo: false,
+      showInternship: false,
+      internshipInfoList: [],
+      filteredInternshipList: [],
+      internshipStatusFilter: 'all',
+      internshipSearchQuery: '',
+      internshipDetailDialog: false,
+      currentInternship: {},
     }
   },
   methods: {
@@ -302,129 +690,153 @@ export default {
         });
       });
     },
-    async handleMenuClick(menu) {
-      this.showMajorInfo = false;
-      this.showTestInfo = false;
-      if (menu === 'majorInfo') {
-        let majorApi = '';
-        if (this.userId === 2) {
-          majorApi = 'http://localhost:8080/api/majorInfo2/getMajorInfo2';
-        } else if (this.userId === 3) {
-          majorApi = 'http://localhost:8080/api/majorInfo3/getMajorInfo3';
-        } else {
-          this.majorInfoList = [];
-          this.showMajorInfo = true;
-          ElMessage.info('暂无信息');
-          return;
-        }
-        // 获取专业申报信息
-        const majorRes = await axios.get(majorApi);
-        let majors = Array.isArray(majorRes.data) ? majorRes.data : [];
-        // 获取考试计划
-        const testRes = await axios.get('http://localhost:8080/api/testInfo/getTestInfoWithMajors');
-        const tests = Array.isArray(testRes.data) ? testRes.data : [];
-        // 处理每个学科的申报按钮禁用和状态
-        majors = majors.map(m => {
-          const test = tests.find(t => t.majorId === m.id);
-          if (test && test.state === '已考试') {
-            if (m.state === '未申报') {
-              return { ...m, disabled: true };
-            } else if (m.state === '已申报') {
-              // 自动更新为已完成
-              this.updateMajorStatusToCompleted(m, majorApi);
-              return { ...m, state: '已完成', disabled: true };
-            }
-          } else if (test && test.state === '未考试' && m.state === '已完成') {
-            // 容错：如果状态为已完成但考试未考试，自动回退为已申报
-            this.updateMajorStatusToDeclared(m, majorApi);
-            return { ...m, state: '已申报', disabled: false };
-          }
-          return { ...m, disabled: false };
-        });
-        this.majorInfoList = majors;
-        this.showMajorInfo = true;
-      } else if (menu === 'testInfo') {
-        let majorApi = '';
-        if (this.userId === 2) {
-          majorApi = 'http://localhost:8080/api/majorInfo2/getMajorInfo2';
-        } else if (this.userId === 3) {
-          majorApi = 'http://localhost:8080/api/majorInfo3/getMajorInfo3';
-        } else {
-          this.testInfoList = [];
-          this.showTestInfo = true;
-          ElMessage.info('暂无信息');
-          return;
-        }
-        axios.get(majorApi)
-          .then(res => {
-            const majors = Array.isArray(res.data) ? res.data : [];
-            const filteredMajors = majors.filter(m => m.state === '已申报' || m.state === '已完成');
-            const majorIds = filteredMajors.map(m => m.id);
-            if (majorIds.length === 0) {
-              this.testInfoList = [];
-              this.showTestInfo = true;
-              return;
-            }
-            axios.get('http://localhost:8080/api/testInfo/getTestInfoWithMajors')
-              .then(res2 => {
-                const allTests = Array.isArray(res2.data) ? res2.data : [];
-                const majorIdsNum = majorIds.map(id => Number(id));
-                console.log('userId', this.userId);
-                console.log('majorIds', majorIdsNum);
-                console.log('allTests', allTests);
-                this.testInfoList = allTests.filter(t => majorIdsNum.includes(Number(t.majorId)));
-                this.showTestInfo = true;
-              })
-              .catch(() => {
-                ElMessage.error('获取考试计划失败');
-              });
-          })
-          .catch(() => {
-            ElMessage.error('获取专业申报信息失败');
-          });
+    async getCurrentUser() {
+      const res = await axios.get('http://localhost:8080/api/user/getUser');
+      const users = Array.isArray(res.data) ? res.data.map(u => ({
+        ...u,
+        userType: u.userType ?? u.user_type,
+        realName: u.realName ?? u.real_name
+      })) : [];
+      const currentUser = users.find(u => u.username === this.username);
+      if (currentUser) {
+        this.userId = currentUser.id;
+        this.realName = currentUser.realName;
       }
     },
-    async updateMajorStatusToCompleted(row, majorApi) {
-      const updated = { ...row, state: '已完成' };
+    async     handleMenuClick(menu) {
+      // 清除所有内容的显示状态
+      this.showMajorInfo = false;
+      this.showTestInfo = false;
+      this.showServiceCenter = false;
+      this.showInternship = false;
+      
+      if (menu === 'serviceCenter') {
+        this.showServiceCenter = true;
+      } else if (menu === 'majorInfo') {
+        // 确保 userId 已赋值
+        if (!this.userId) {
+          await this.getCurrentUser();
+        }
+        const majorApi = 'http://localhost:8080/api/majorInfo/getMajorInfo';
+        const majorRes = await axios.get(majorApi);
+        let majors = Array.isArray(majorRes.data) ? majorRes.data : [];
+        // 只保留前面信息和当前用户对应的stateX栏
+        const stateKey = 'state' + this.userId;
+        majors = majors.map(m => ({
+          ...m,
+          state: m[stateKey] || '未申报',
+          stateKey // 记录当前行的state字段名，便于后续操作
+        }));
+        this.majorInfoList = majors;
+        this.filteredMajorInfoList = [];
+        this.searchQuery = '';
+        this.statusFilter = 'all';
+        // 设置专业申报为可见
+        this.showMajorInfo = true;
+      } else if (menu === 'testInfo') {
+        try {
+          // 1. 获取当前用户的专业申报信息
+          const majorApi = 'http://localhost:8080/api/majorInfo/getMajorInfo';
+          const majorRes = await axios.get(majorApi);
+          let majors = Array.isArray(majorRes.data) ? majorRes.data : [];
+          console.log('所有专业:', majors);
+          
+          const stateKey = 'state' + this.userId;
+          // 只保留当前用户已申报/已完成的专业
+          const filteredMajors = majors.filter(m => {
+            const state = m[stateKey];
+            return state === '已申报' || state === '已完成';
+          });
+          console.log('筛选后专业:', filteredMajors);
+          
+          const majorIds = filteredMajors.map(m => Number(m.id));
+          console.log('专业id列表:', majorIds);
+          
+          if (majorIds.length === 0) {
+            this.testInfoList = [];
+            // 设置考试计划为可见，但内容为空
+            this.showTestInfo = true;
+            console.log('当前用户没有已申报或已完成的专业');
+            return;
+          }
+          
+          // 2. 获取所有考试计划，改用getTestInfo接口
+          const testRes = await axios.get('http://localhost:8080/api/testInfo/getTestInfo');
+          const allTests = Array.isArray(testRes.data) ? testRes.data : [];
+          console.log('所有考试计划:', allTests);
+          
+          // 3. 根据专业ID筛选考试计划
+          this.testInfoList = allTests.filter(t => majorIds.includes(Number(t.majorId)));
+          console.log('筛选后考试计划:', this.testInfoList);
+          
+          // 重置筛选条件
+          this.testSearchQuery = '';
+          this.testStatusFilter = 'all';
+          this.filteredTestInfoList = [];
+          
+          // 设置考试计划为可见
+          this.showTestInfo = true;
+        } catch (error) {
+          console.error('获取考试计划出错:', error);
+          this.testInfoList = [];
+          ElMessage.error('获取考试计划失败');
+        }
+      } else if (menu === 'internship') {
+        // 确保 userId 已赋值
+        if (!this.userId) {
+          await this.getCurrentUser();
+        }
+        
+        try {
+          // 获取实习信息
+          const internshipRes = await axios.get('http://localhost:8080/api/internshipInfo/getInternshipInfo');
+          let internships = Array.isArray(internshipRes.data) ? internshipRes.data : [];
+          
+          // 为每个实习信息添加当前用户的状态
+          const stateKey = 'state' + this.userId;
+          internships = internships.map(item => ({
+            ...item,
+            userState: item[stateKey] || '未报名',
+          }));
+          
+          this.internshipInfoList = internships;
+          this.filteredInternshipList = [];
+          this.internshipSearchQuery = '';
+          this.internshipStatusFilter = 'all';
+          
+          // 显示实习信息
+          this.showInternship = true;
+        } catch (error) {
+          console.error('获取实习信息失败:', error);
+          ElMessage.error('获取实习信息失败');
+          this.internshipInfoList = [];
+          this.showInternship = true;
+        }
+      }
+    },
+    async updateMajorStatusToCompleted(row, majorApi, stateKey) {
+      const updated = { ...row, [stateKey]: '已完成' };
       await axios.post(majorApi.replace('get', 'update'), updated);
     },
-    async updateMajorStatusToDeclared(row, majorApi) {
-      const updated = { ...row, state: '已申报' };
+    async updateMajorStatusToDeclared(row, majorApi, stateKey) {
+      const updated = { ...row, [stateKey]: '已申报' };
       await axios.post(majorApi.replace('get', 'update'), updated);
     },
     async declareMajor(row) {
-      // 根据userId选择接口
-      const updated = { ...row, state: '已申报' };
-      let url = '';
-      if (this.userId === 2) {
-        url = 'http://localhost:8080/api/majorInfo2/updateMajorInfo2';
-      } else if (this.userId === 3) {
-        url = 'http://localhost:8080/api/majorInfo3/updateMajorInfo3';
-      } else {
-        ElMessage.error('无权限申报');
-        return;
-      }
+      const updated = { ...row, [row.stateKey]: '已申报' };
+      const url = 'http://localhost:8080/api/majorInfo/updateMajorInfo';
       await axios.post(url, updated);
       row.state = '已申报';
-      // 重新处理禁用和状态
-      this.handleMenuClick('majorInfo');
+      row.disabled = false;
       ElMessage.success('申报成功');
     },
     cancelMajor(row) {
-      // 根据userId选择接口
-      const updated = { ...row, state: '未申报' };
-      let url = '';
-      if (this.userId === 2) {
-        url = 'http://localhost:8080/api/majorInfo2/updateMajorInfo2';
-      } else if (this.userId === 3) {
-        url = 'http://localhost:8080/api/majorInfo3/updateMajorInfo3';
-      } else {
-        ElMessage.error('无权限取消');
-        return;
-      }
+      const updated = { ...row, [row.stateKey]: '未申报' };
+      const url = 'http://localhost:8080/api/majorInfo/updateMajorInfo';
       axios.post(url, updated)
         .then(() => {
           row.state = '未申报';
+          row.disabled = false;
           ElMessage.success('已取消申报');
         })
         .catch(() => {
@@ -445,11 +857,258 @@ export default {
     getPlanStatusCount(plan) {
       return this.testInfoList.filter(item => item.plan === plan).length;
     },
-    getTestRowClassName({ row }) {
+          getTestRowClassName({ row }) {
       if (row.state === '已考试') return 'test-completed-row';
       if (row.plan === '已安排') return 'test-arranged-row';
       return 'test-unarranged-row';
-    }
+    },
+    handleSearch() {
+      this.applyFilters();
+    },
+    
+    handleFilterChange(command) {
+      this.statusFilter = command;
+      this.applyFilters();
+    },
+    
+    applyFilters() {
+      // Start with all major info
+      let filtered = [...this.majorInfoList];
+      
+      // Apply status filter if not "all"
+      if (this.statusFilter !== 'all') {
+        filtered = filtered.filter(item => item.state === this.statusFilter);
+      }
+      
+      // Apply search filter if there's a search query
+      if (this.searchQuery.trim()) {
+        const query = this.searchQuery.trim().toLowerCase();
+        filtered = filtered.filter(item => {
+          return (
+            item.id.toString().includes(query) || 
+            item.name.toLowerCase().includes(query)
+          );
+        });
+      }
+      
+      // If no filters applied and no search, return empty array to display all items
+      if (!this.searchQuery.trim() && this.statusFilter === 'all') {
+        this.filteredMajorInfoList = [];
+        return;
+      }
+      
+      this.filteredMajorInfoList = filtered;
+    },
+    
+    handleTestSearch() {
+      this.applyTestFilters();
+    },
+    
+    handleServiceClick(service) {
+      // 这里稍后实现具体服务的跳转逻辑
+      ElMessage({
+        message: `您点击了${service.name}，该功能正在开发中...`,
+        type: 'info'
+      });
+    },
+    
+    handleTestFilterChange(command) {
+      this.testStatusFilter = command;
+      this.applyTestFilters();
+    },
+    
+    applyTestFilters() {
+      // Start with all test info
+      let filtered = [...this.testInfoList];
+      
+      // Apply status filter if not "all"
+      if (this.testStatusFilter !== 'all') {
+        // Check if the filter is for plan or state
+        if (this.testStatusFilter.startsWith('plan:')) {
+          const planStatus = this.testStatusFilter.replace('plan:', '');
+          filtered = filtered.filter(item => item.plan === planStatus);
+        } else if (this.testStatusFilter.startsWith('state:')) {
+          const stateStatus = this.testStatusFilter.replace('state:', '');
+          filtered = filtered.filter(item => item.state === stateStatus);
+        }
+      }
+      
+      // Apply search filter if there's a search query
+      if (this.testSearchQuery.trim()) {
+        const query = this.testSearchQuery.trim().toLowerCase();
+        filtered = filtered.filter(item => {
+          return (
+            (item.majorId && item.majorId.toString().includes(query)) || 
+            (item.name && item.name.toLowerCase().includes(query))
+          );
+        });
+      }
+      
+      // If no filters applied and no search, return empty array to display all items
+      if (!this.testSearchQuery.trim() && this.testStatusFilter === 'all') {
+        this.filteredTestInfoList = [];
+        return;
+      }
+      
+      this.filteredTestInfoList = filtered;
+    },
+    
+    // 格式化日期
+    formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    },
+    
+    // 获取实习状态标签类型
+    getStatusTagType(status) {
+      switch(status) {
+        case '未报名': return 'info';
+        case '已报名': return 'warning';
+        default: return 'info';
+      }
+    },
+    
+    // 获取实习状态数量
+    getInternshipStatusCount(status) {
+      return this.internshipInfoList.filter(item => item.userState === status).length;
+    },
+    
+    // 获取实习招募中状态数量
+    getInternshipRecruitingCount() {
+      return this.internshipInfoList.filter(item => item.status === '招募中').length;
+    },
+    
+    // 获取行样式
+    getInternshipRowClassName({ row }) {
+      if (row.userState === '已通过') return 'internship-completed-row';
+      if (row.userState === '已报名') return 'internship-applied-row';
+      return 'internship-unapplied-row';
+    },
+    
+    // 处理实习筛选
+    handleInternshipFilterChange(status) {
+      this.internshipStatusFilter = status;
+      this.applyInternshipFilters();
+    },
+    
+    // 处理实习搜索
+    handleInternshipSearch() {
+      this.applyInternshipFilters();
+    },
+    
+    // 应用实习筛选
+    applyInternshipFilters() {
+      // 开始筛选
+      let filtered = [...this.internshipInfoList];
+      
+      // 应用状态筛选
+      if (this.internshipStatusFilter !== 'all') {
+        // 检查是否为报名状态筛选
+        if (this.internshipStatusFilter.startsWith('status:')) {
+          const statusValue = this.internshipStatusFilter.replace('status:', '');
+          filtered = filtered.filter(item => item.status === statusValue);
+        } else {
+          // 按报名状态筛选
+          filtered = filtered.filter(item => item.userState === this.internshipStatusFilter);
+        }
+      }
+      
+      // 应用搜索
+      if (this.internshipSearchQuery.trim()) {
+        const query = this.internshipSearchQuery.trim().toLowerCase();
+        filtered = filtered.filter(item => 
+          (item.name && item.name.toLowerCase().includes(query)) || 
+          (item.direction && item.direction.toLowerCase().includes(query)) ||
+          (item.company && item.company.toLowerCase().includes(query))
+        );
+      }
+      
+      // 如果没有筛选条件，返回空数组以显示所有项目
+      if (!this.internshipSearchQuery.trim() && this.internshipStatusFilter === 'all') {
+        this.filteredInternshipList = [];
+        return;
+      }
+      
+      this.filteredInternshipList = filtered;
+    },
+    
+    // 报名实习
+    applyInternship(internship) {
+      ElMessageBox.confirm(`确定要报名参加"${internship.name}"吗？`, '报名确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }).then(async () => {
+        try {
+          // 调用API更新状态
+          await axios.get(`http://localhost:8080/api/internshipInfo/updateInternshipInfoState/${internship.id}/${this.userId}/已报名`);
+          
+          // 更新本地数据
+          internship.userState = '已报名';
+          ElMessage.success('报名成功');
+        } catch (error) {
+          console.error('报名失败:', error);
+          ElMessage.error('报名失败，请重试');
+        }
+      }).catch(() => {
+        // 用户取消，无需处理
+      });
+    },
+    
+    // 取消实习报名
+    cancelInternship(internship) {
+      ElMessageBox.confirm(`确定要取消"${internship.name}"的报名吗？`, '取消确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async () => {
+        try {
+          // 调用API更新状态
+          await axios.get(`http://localhost:8080/api/internshipInfo/updateInternshipInfoState/${internship.id}/${this.userId}/未报名`);
+          
+          // 更新本地数据
+          internship.userState = '未报名';
+          ElMessage.success('已取消报名');
+        } catch (error) {
+          console.error('取消报名失败:', error);
+          ElMessage.error('取消报名失败，请重试');
+        }
+      }).catch(() => {
+        // 用户取消，无需处理
+      });
+    },
+    
+    // 查看实习详情
+    viewInternshipDetails(internship) {
+      this.currentInternship = { ...internship };
+      this.internshipDetailDialog = true;
+    },
+    
+    // 下载文档
+    downloadDocument(url) {
+      if (!url) {
+        ElMessage.warning('文档链接不可用');
+        return;
+      }
+      
+      // 在新窗口打开文档链接
+      window.open(url, '_blank');
+    },
+    
+    // 从详情对话框报名实习
+    applyInternshipFromDialog() {
+      this.applyInternship(this.currentInternship);
+      // 关闭对话框
+      this.internshipDetailDialog = false;
+    },
+    
+    // 从详情对话框取消报名实习
+    cancelInternshipFromDialog() {
+      this.cancelInternship(this.currentInternship);
+      // 关闭对话框
+      this.internshipDetailDialog = false;
+    },
   },
   mounted() {
     // 自动获取当前用户真实姓名和id
@@ -559,6 +1218,7 @@ export default {
   color: white;
   border-radius: 8px;
   margin-bottom: 20px;
+  position: relative;
 }
 
 .major-info-header h2 {
@@ -571,6 +1231,51 @@ export default {
   display: flex;
   justify-content: center;
   gap: 20px;
+}
+
+.search-box {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  width: 500px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-box :deep(.el-input__wrapper) {
+  padding: 0 15px;
+}
+
+.search-box :deep(.el-input__inner) {
+  font-size: 1.2rem;
+  height: 48px;
+  border-radius: 8px;
+  line-height: 48px;
+}
+
+.search-box :deep(.el-input) {
+  font-size: 1.2rem;
+  height: 48px;
+  flex: 1;
+}
+
+.clickable-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.clickable-tag:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.active-filter {
+  border-width: 2px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
 }
 
 .status-summary .el-tag {
@@ -633,6 +1338,7 @@ export default {
   color: white;
   border-radius: 8px;
   margin-bottom: 20px;
+  position: relative;
 }
 
 .test-info-header h2 {
@@ -687,5 +1393,135 @@ export default {
 ::v-deep .test-status-tag.el-tag--danger {
   border-color: #f56c6c !important;
   color: #f56c6c !important;
+}
+
+/* 服务中心样式 */
+.service-center-container {
+  padding: 0;
+}
+
+.service-center-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #36d1dc 0%, #5b86e5 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.service-center-header h2 {
+  margin: 0 0 15px 0;
+  font-size: 2rem;
+  text-align: center;
+  color: white;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 30px;
+  padding: 20px;
+}
+
+.service-card {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 30px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 180px;
+}
+
+.service-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.service-icon {
+  font-size: 3rem;
+  color: #409EFF;
+  margin-bottom: 15px;
+  background: #f0f7ff;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-name {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.service-desc {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* 实习信息样式 */
+.internship-info-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.internship-info-header h2 {
+  margin: 0 0 15px 0;
+  font-size: 2rem;
+  text-align: center;
+}
+
+::v-deep .internship-completed-row {
+  background-color: #f0f9ff !important;
+}
+
+::v-deep .internship-applied-row {
+  background-color: #fff7ed !important;
+}
+
+::v-deep .internship-unapplied-row {
+  background-color: #fafafa !important;
+}
+
+.internship-detail {
+  padding: 15px;
+}
+
+.internship-detail .detail-item {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.internship-detail .label {
+  font-weight: bold;
+  width: 100px;
+  flex-shrink: 0;
+}
+
+.internship-detail .value {
+  flex-grow: 1;
+}
+
+.internship-detail .el-button {
+  margin-left: 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style> 
