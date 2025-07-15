@@ -245,7 +245,6 @@ export default {
       this.$refs.loginFormRef.validate(valid => {
         if (!valid) return
         
-        // 使用新的登录接口
         axios.post('http://localhost:8080/api/user/login', {
           username: this.loginForm.username,
           password: this.loginForm.password

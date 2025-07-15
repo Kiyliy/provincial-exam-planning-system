@@ -935,7 +935,6 @@ export default {
           .then(res => {
             this.testInfoList = Array.isArray(res.data) ? res.data : [];
             this.showTestInfo = true;
-            // Reset search and filter
             this.testSearchQuery = '';
             this.testStatusFilter = 'all';
             this.filteredTestInfoList = [];
@@ -1000,6 +999,45 @@ export default {
         .then(() => {
           row.state = '已考试';
           ElMessage.success('已完成考试');
+          
+          // 获取所有专业信息，更新相关学科的申报状态
+          axios.get('http://localhost:8080/api/majorInfo/getMajorInfo')
+            .then(res => {
+              const majors = Array.isArray(res.data) ? res.data : [];
+              // 找到对应的专业信息
+              const majorInfo = majors.find(m => m.id === Number(row.majorId));
+              
+              if (majorInfo) {
+                // 更新所有状态
+                const updatedFields = {};
+                
+                // 对于已申报的学生，将状态改为已完成
+                if (majorInfo.state2 === '已申报') {
+                  updatedFields.state2 = '已完成';
+                }
+                if (majorInfo.state3 === '已申报') {
+                  updatedFields.state3 = '已完成';
+                }
+                if (majorInfo.state4 === '已申报') {
+                  updatedFields.state4 = '已完成';
+                }
+                
+                // 只有在有字段需要更新时才发送请求
+                if (Object.keys(updatedFields).length > 0) {
+                  const updatedMajor = { ...majorInfo, ...updatedFields };
+                  axios.post('http://localhost:8080/api/majorInfo/updateMajorInfo', updatedMajor)
+                    .then(() => {
+                      console.log('已更新学生申报状态为已完成');
+                    })
+                    .catch(error => {
+                      console.error('更新学科申报状态失败:', error);
+                    });
+                }
+              }
+            })
+            .catch(error => {
+              console.error('获取专业信息失败:', error);
+            });
         })
         .catch(() => {
           ElMessage.error('操作失败');
@@ -1150,12 +1188,9 @@ export default {
     },
     
     applyTestFilters() {
-      // Start with all test info
       let filtered = [...this.testInfoList];
       
-      // Apply status filter if not "all"
       if (this.testStatusFilter !== 'all') {
-        // Check if the filter is for plan or state
         if (this.testStatusFilter.startsWith('plan:')) {
           const planStatus = this.testStatusFilter.replace('plan:', '');
           filtered = filtered.filter(item => item.plan === planStatus);
@@ -1165,7 +1200,6 @@ export default {
         }
       }
       
-      // Apply search filter if there's a search query
       if (this.testSearchQuery.trim()) {
         const query = this.testSearchQuery.trim().toLowerCase();
         filtered = filtered.filter(item => {
@@ -1176,7 +1210,6 @@ export default {
         });
       }
       
-      // If no filters applied and no search, return empty array to display all items
       if (!this.testSearchQuery.trim() && this.testStatusFilter === 'all') {
         this.filteredTestInfoList = [];
         return;
@@ -1185,7 +1218,6 @@ export default {
       this.filteredTestInfoList = filtered;
     },
 
-    // 处理服务卡片点击
     handleServiceClick(service) {
       if (service.name === '联系我们') {
         this.contactDialogVisible = true;
@@ -1290,7 +1322,6 @@ export default {
     // 编辑实习信息
     editInternship(row) {
       this.internshipForm = { ...row };
-      // 保证startDate为YYYY-MM-DD字符串
       if (this.internshipForm.startDate) {
         this.internshipForm.startDate = this.internshipForm.startDate.slice(0, 10);
       }
@@ -1338,10 +1369,8 @@ export default {
             this.internshipForm.state3 = '未报名';
             this.internshipForm.state4 = '未报名';
           }
-          // 保证startDate为YYYY-MM-DD字符串
           if (this.internshipForm.startDate) {
             if (typeof this.internshipForm.startDate === 'object' && this.internshipForm.startDate instanceof Date) {
-              // 格式化为YYYY-MM-DD
               const d = this.internshipForm.startDate;
               this.internshipForm.startDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             } else if (typeof this.internshipForm.startDate === 'string') {
@@ -1364,10 +1393,8 @@ export default {
     },
     
     applyMaterialsFilters() {
-      // Start with all materials
       let filtered = [...this.materialsList];
       
-      // Apply search filter if there's a search query
       if (this.materialsSearchQuery.trim()) {
         const query = this.materialsSearchQuery.trim().toLowerCase();
         filtered = filtered.filter(item => {
@@ -1378,7 +1405,6 @@ export default {
         });
       }
       
-      // If no filters applied and no search, return empty array to display all items
       if (!this.materialsSearchQuery.trim()) {
         this.filteredMaterialsList = [];
         return;
@@ -1418,7 +1444,6 @@ export default {
               coverImage: "/src/assets/logo.svg",
               edition: "第七版"
             },
-            // ... other default items ...
           ];
         });
     },

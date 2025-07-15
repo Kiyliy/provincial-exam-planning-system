@@ -1147,22 +1147,17 @@ export default {
   methods: {
     // 返回登录页面
     goLogin() {
-      // 获取URL参数中的userId
       const userId = this.$route.query.userId;
       if (userId) {
-        // 调用登出API更新在线状态
         axios.post(`http://localhost:8080/api/user/logout?userId=${userId}`)
           .then(() => {
-            // 无论成功与否都跳转到登录页
             this.$router.push({ name: 'Login' });
           })
           .catch(error => {
             console.error('登出失败:', error);
-            // 即使失败也跳转到登录页
             this.$router.push({ name: 'Login' });
           });
       } else {
-        // 没有userId直接跳转
         this.$router.push({ name: 'Login' });
       }
     },
@@ -1241,20 +1236,37 @@ export default {
       if (menu === 'serviceCenter') {
         this.showServiceCenter = true;
       } else if (menu === 'majorInfo') {
-        // 确保 userId 已赋值
         if (!this.userId) {
           await this.getCurrentUser();
         }
         const majorApi = 'http://localhost:8080/api/majorInfo/getMajorInfo';
         const majorRes = await axios.get(majorApi);
         let majors = Array.isArray(majorRes.data) ? majorRes.data : [];
-        // 只保留前面信息和当前用户对应的stateX栏
+        
+        // 获取所有考试计划
+        const testRes = await axios.get('http://localhost:8080/api/testInfo/getTestInfo');
+        const allTests = Array.isArray(testRes.data) ? testRes.data : [];
+        
         const stateKey = 'state' + this.userId;
-        majors = majors.map(m => ({
-          ...m,
-          state: m[stateKey] || '未申报',
-          stateKey // 记录当前行的state字段名，便于后续操作
-        }));
+        majors = majors.map(m => {
+          // 查找对应的考试计划
+          const relatedTest = allTests.find(t => Number(t.majorId) === Number(m.id));
+          
+          const isTestCompleted = relatedTest && relatedTest.state === '已考试';
+          const isUndeclared = m[stateKey] === '未申报' || !m[stateKey];
+          
+          // 如果考试已完成但未申报
+          const isDisabled = isTestCompleted && isUndeclared;
+          
+          return {
+            ...m,
+            state: m[stateKey] || '未申报',
+            stateKey,
+            disabled: isDisabled, 
+            testStatus: relatedTest ? relatedTest.state : null
+          };
+        });
+        
         this.majorInfoList = majors;
         this.filteredMajorInfoList = [];
         this.searchQuery = '';
@@ -1263,14 +1275,12 @@ export default {
         this.showMajorInfo = true;
       } else if (menu === 'testInfo') {
         try {
-          // 1. 获取当前用户的专业申报信息
           const majorApi = 'http://localhost:8080/api/majorInfo/getMajorInfo';
           const majorRes = await axios.get(majorApi);
           let majors = Array.isArray(majorRes.data) ? majorRes.data : [];
           console.log('所有专业:', majors);
           
           const stateKey = 'state' + this.userId;
-          // 只保留当前用户已申报/已完成的专业
           const filteredMajors = majors.filter(m => {
             const state = m[stateKey];
             return state === '已申报' || state === '已完成';
@@ -1282,27 +1292,22 @@ export default {
           
           if (majorIds.length === 0) {
             this.testInfoList = [];
-            // 设置考试计划为可见，但内容为空
             this.showTestInfo = true;
             console.log('当前用户没有已申报或已完成的专业');
             return;
           }
           
-          // 2. 获取所有考试计划，改用getTestInfo接口
           const testRes = await axios.get('http://localhost:8080/api/testInfo/getTestInfo');
           const allTests = Array.isArray(testRes.data) ? testRes.data : [];
           console.log('所有考试计划:', allTests);
           
-          // 3. 根据专业ID筛选考试计划
           this.testInfoList = allTests.filter(t => majorIds.includes(Number(t.majorId)));
           console.log('筛选后考试计划:', this.testInfoList);
           
-          // 重置筛选条件
           this.testSearchQuery = '';
           this.testStatusFilter = 'all';
           this.filteredTestInfoList = [];
           
-          // 设置考试计划为可见
           this.showTestInfo = true;
         } catch (error) {
           console.error('获取考试计划出错:', error);
@@ -1310,17 +1315,14 @@ export default {
           ElMessage.error('获取考试计划失败');
         }
       } else if (menu === 'internship') {
-        // 确保 userId 已赋值
         if (!this.userId) {
           await this.getCurrentUser();
         }
         
         try {
-          // 获取实习信息
           const internshipRes = await axios.get('http://localhost:8080/api/internshipInfo/getInternshipInfo');
           let internships = Array.isArray(internshipRes.data) ? internshipRes.data : [];
           
-          // 为每个实习信息添加当前用户的状态
           const stateKey = 'state' + this.userId;
           internships = internships.map(item => ({
             ...item,
@@ -1351,12 +1353,9 @@ export default {
       } else if (menu === 'tutoring') {
         this.showTutoring = true;
       } else if (menu === 'competition') {
-        // Reset filters
         this.competitionSearchQuery = '';
         this.competitionTypeFilter = 'all';
-        // Initialize filtered list with all competitions
         this.filteredCompetitionList = [...this.competitionList];
-        // Show competition section
         this.showCompetition = true;
       }
     },
@@ -1395,6 +1394,7 @@ export default {
     getRowClassName({ row }) {
       if (row.state === '已完成') return 'completed-row';
       if (row.state === '已申报') return 'declared-row';
+      if (row.disabled) return 'disabled-row'; // 添加已考试但未申报的行样式
       return 'undeclared-row';
     },
     getTestStatusCount(status) {
@@ -1418,15 +1418,12 @@ export default {
     },
     
     applyFilters() {
-      // Start with all major info
       let filtered = [...this.majorInfoList];
       
-      // Apply status filter if not "all"
       if (this.statusFilter !== 'all') {
         filtered = filtered.filter(item => item.state === this.statusFilter);
       }
       
-      // Apply search filter if there's a search query
       if (this.searchQuery.trim()) {
         const query = this.searchQuery.trim().toLowerCase();
         filtered = filtered.filter(item => {
@@ -1437,7 +1434,6 @@ export default {
         });
       }
       
-      // If no filters applied and no search, return empty array to display all items
       if (!this.searchQuery.trim() && this.statusFilter === 'all') {
         this.filteredMajorInfoList = [];
         return;
@@ -1486,7 +1482,6 @@ export default {
         .catch(error => {
           console.error('获取教材信息失败:', error);
           ElMessage.error('获取教材信息失败');
-          // 如果API调用失败，使用默认数据
           this.materialsList = [
             {
               id: 1,
@@ -1499,7 +1494,6 @@ export default {
               coverImage: "/src/assets/logo.svg",
               edition: "第七版"
             },
-            // ... other default items ...
           ];
         });
     },
@@ -1515,12 +1509,9 @@ export default {
     },
     
     applyTestFilters() {
-      // Start with all test info
       let filtered = [...this.testInfoList];
       
-      // Apply status filter if not "all"
       if (this.testStatusFilter !== 'all') {
-        // Check if the filter is for plan or state
         if (this.testStatusFilter.startsWith('plan:')) {
           const planStatus = this.testStatusFilter.replace('plan:', '');
           filtered = filtered.filter(item => item.plan === planStatus);
@@ -1530,7 +1521,6 @@ export default {
         }
       }
       
-      // Apply search filter if there's a search query
       if (this.testSearchQuery.trim()) {
         const query = this.testSearchQuery.trim().toLowerCase();
         filtered = filtered.filter(item => {
@@ -1541,7 +1531,6 @@ export default {
         });
       }
       
-      // If no filters applied and no search, return empty array to display all items
       if (!this.testSearchQuery.trim() && this.testStatusFilter === 'all') {
         this.filteredTestInfoList = [];
         return;
@@ -1672,7 +1661,6 @@ export default {
           ElMessage.error('取消报名失败，请重试');
         }
       }).catch(() => {
-        // 用户取消，无需处理
       });
     },
     
@@ -1689,11 +1677,9 @@ export default {
         return;
       }
       
-      // 在新窗口打开文档链接
       window.open(url, '_blank');
     },
     
-    // 从详情对话框报名实习
     applyInternshipFromDialog() {
       this.applyInternship(this.currentInternship);
       // 关闭对话框
@@ -1714,10 +1700,8 @@ export default {
 
     // 应用教学资料筛选
     applyMaterialsFilters() {
-      // Start with all materials
       let filtered = [...this.materialsList];
       
-      // Apply search filter if there's a search query
       if (this.materialsSearchQuery.trim()) {
         const query = this.materialsSearchQuery.trim().toLowerCase();
         filtered = filtered.filter(item => 
@@ -1726,7 +1710,6 @@ export default {
         );
       }
       
-      // If no filters applied and no search, return empty array to display all items
       if (!this.materialsSearchQuery.trim()) {
         this.filteredMaterialsList = [];
         return;
@@ -1760,7 +1743,6 @@ export default {
     loadEducationStaff() {
       axios.get('http://localhost:8080/api/user/getUser')
         .then(res => {
-          // Filter users with userType = 2 (education bureau staff)
           this.educationStaff = Array.isArray(res.data) ? res.data
             .filter(user => user.userType === 2 || user.user_type === 2)
             .map(user => ({
@@ -1787,47 +1769,36 @@ export default {
       
       ElMessage.success(`开始与${staff.realName}的咨询，正在建立连接...`);
       
-      // Set current staff and clear previous messages
       this.currentStaff = staff;
       this.chatMessages = [];
       
-      // Add initial staff message after a short delay (simulating connection)
       setTimeout(() => {
-        // Show the chat dialog
         this.consultationDialogVisible = true;
         
-        // No initial greeting message
         this.scrollToBottom();
       }, 1000);
     },
     
-    // Send a new message
     sendMessage() {
       if (!this.newMessage.trim()) return;
       
-      // Add student message
       this.chatMessages.push({
         sender: 'student',
         text: this.newMessage.trim(),
         time: this.getCurrentTime()
       });
       
-      // Clear input field
       const sentMessage = this.newMessage.trim();
       this.newMessage = '';
       
-      // Simulate staff typing response (in a real app, this would be a websocket/API call)
       setTimeout(() => {
-        // Show typing indicator
         ElMessage({
           type: 'info',
           message: `${this.currentStaff.realName}正在输入...`,
           duration: 1500,
         });
         
-        // After a delay, add staff response
         setTimeout(() => {
-          // Generate a contextual response based on the student's message
           let responseText = '';
           
           if (sentMessage.includes('你好') || sentMessage.includes('您好') || sentMessage.includes('hi') || sentMessage.includes('hello')) {
@@ -1840,7 +1811,6 @@ export default {
             responseText = '不客气！如果还有其他问题，随时可以咨询我。祝你学习顺利！';
           } else if (sentMessage.includes('再见') || sentMessage.includes('拜拜')) {
             responseText = '好的，如有其他问题欢迎随时咨询。再见！';
-            // Optionally close the dialog after some time
             setTimeout(() => {
               this.consultationDialogVisible = false;
             }, 2000);
@@ -1848,28 +1818,24 @@ export default {
             responseText = '我了解了你的问题。建议你可以查阅相关的学习资料或者参加我们的线下辅导课程。你还有其他具体的问题吗？';
           }
           
-          // Add staff response to chat
           this.chatMessages.push({
             sender: 'staff',
             text: responseText,
             time: this.getCurrentTime()
           });
           
-          // Scroll to bottom to show latest message
           this.scrollToBottom();
         }, 1500);
       }, 500);
     },
     
-    // Get current time for messages
     getCurrentTime() {
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, '0');
       const minutes = now.getMinutes().toString().padStart(2, '0');
       return `${hours}:${minutes}`;
     },
-    
-    // Scroll to bottom of chat
+
     scrollToBottom() {
       this.$nextTick(() => {
         if (this.$refs.messagesEnd) {
@@ -1885,15 +1851,12 @@ export default {
       this.applyCompetitionFilters();
     },
     applyCompetitionFilters() {
-      // Start with all competition info
       let filtered = [...this.competitionList];
       
-      // Apply type filter if not "all"
       if (this.competitionTypeFilter !== 'all') {
         filtered = filtered.filter(item => item.type === this.competitionTypeFilter);
       }
       
-      // Apply search filter if there's a search query
       if (this.competitionSearchQuery.trim()) {
         const query = this.competitionSearchQuery.trim().toLowerCase();
         filtered = filtered.filter(item => {
@@ -1920,7 +1883,7 @@ export default {
       this.competitionDetailsVisible = true;
     },
     openCompetitionLink(competition) {
-      // Open the registration URL in a new tab
+
       window.open(competition.registrationUrl, '_blank');
     },
   },
@@ -3116,5 +3079,13 @@ export default {
   height: auto;
   border-radius: 6px;
   font-weight: bold;
+}
+
+.disabled-row {
+  opacity: 0.6;
+  background-color: #f5f5f5 !important;
+}
+.disabled-row:hover td {
+  background-color: #f5f5f5 !important;
 }
 </style> 
