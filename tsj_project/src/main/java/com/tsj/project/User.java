@@ -8,6 +8,9 @@ public class User {
     private String realName;
     private String phone;
     private Integer userType;
+    private String avatar;
+    private Integer onlineStatus;
+    private String email;
     
     public Long getId() {
         return id;
@@ -44,5 +47,23 @@ public class User {
     }
     public void setUserType(Integer userType) {
         this.userType = userType;
+    }
+    public String getAvatar() {
+        return avatar;
+    }
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+    public Integer getOnlineStatus() {
+        return onlineStatus;
+    }
+    public void setOnlineStatus(Integer onlineStatus) {
+        this.onlineStatus = onlineStatus;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

@@ -15,6 +15,13 @@ public class UserService {
     }
     
     public void insertUser(User user){
+        // 设置默认值
+        if (user.getAvatar() == null) {
+            user.setAvatar("/src/assets/default-avatar.jpg");
+        }
+        if (user.getOnlineStatus() == null) {
+            user.setOnlineStatus(0); // 默认离线
+        }
         userMapper.insertUser(user);
     }
     
@@ -28,5 +35,33 @@ public class UserService {
     
     public User getUser2(Long id){
         return userMapper.getUser2(id);
+    }
+    
+    // 添加新方法
+    public void updateOnlineStatus(Long id, Integer status) {
+        userMapper.updateOnlineStatus(id, status);
+    }
+    
+    public User getUserByUsername(String username) {
+        return userMapper.getUserByUsername(username);
+    }
+    
+    // 用户登录时更新在线状态
+    public User login(String username, String password) {
+        User user = userMapper.getUserByUsername(username);
+        if (user != null && user.getPassword().equals(password)) {
+            // 更新在线状态为在线
+            updateOnlineStatus(user.getId(), 1);
+            user.setOnlineStatus(1);
+            return user;
+        }
+        return null;
+    }
+    
+    // 用户登出时更新在线状态
+    public void logout(Long userId) {
+        if (userId != null) {
+            updateOnlineStatus(userId, 0);
+        }
     }
 }

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tsj.Mapper.TextbookMapper">
+    <!-- 使用resultMap来明确定义映射关系 -->
+    <resultMap id="textbookMap" type="com.tsj.project.Textbook">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="edition" column="edition"/>
+        <result property="author" column="author"/>
+        <result property="publisher" column="publisher"/>
+        <result property="coverImagePath" column="cover_image_path"/>
+        <result property="downloadUrl" column="download_url"/>
+        <result property="publishYear" column="publish_year"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <select id="getTextbooks" resultMap="textbookMap">
+        SELECT * FROM textbooks
+    </select>
+    
+    <select id="getTextbookById" parameterType="integer" resultMap="textbookMap">
+        SELECT * FROM textbooks WHERE id = #{id}
+    </select>
+    
+    <select id="searchTextbooks" parameterType="string" resultMap="textbookMap">
+        SELECT * FROM textbooks 
+        WHERE title LIKE CONCAT('%', #{keyword}, '%') 
+        OR author LIKE CONCAT('%', #{keyword}, '%')
+        OR publisher LIKE CONCAT('%', #{keyword}, '%')
+        OR description LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+    
+    <insert id="insertTextbook" parameterType="com.tsj.project.Textbook">
+        INSERT INTO textbooks (title, edition, author, publisher, cover_image_path, download_url, publish_year, description)
+        VALUES (#{title}, #{edition}, #{author}, #{publisher}, #{coverImagePath}, #{downloadUrl}, #{publishYear}, #{description})
+    </insert>
+    
+    <update id="updateTextbook" parameterType="com.tsj.project.Textbook">
+        UPDATE textbooks
+        SET title = #{title}, 
+            edition = #{edition}, 
+            author = #{author}, 
+            publisher = #{publisher}, 
+            cover_image_path = #{coverImagePath}, 
+            download_url = #{downloadUrl}, 
+            publish_year = #{publishYear}, 
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteTextbook" parameterType="integer">
+        DELETE FROM textbooks WHERE id = #{id}
+    </delete>
+</mapper> 
