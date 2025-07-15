@@ -34,7 +34,13 @@
     <el-container>
       <el-header style="text-align: right; font-size: 12px">
         <div class="toolbar">
-          <span>欢迎您，{{ realName }}！</span>
+          <div class="user-info">
+            <el-avatar :src="userAvatar" size="small" class="user-avatar"></el-avatar>
+            <span>欢迎您，{{ realName }}！</span>
+            <el-tag size="small" :type="userOnlineStatus === 1 ? 'success' : 'info'" class="status-tag">
+              {{ userOnlineStatus === 1 ? '在线' : '离线' }}
+            </el-tag>
+          </div>
           <el-dropdown>
             <el-icon style="margin-left: 10px; margin-top: 1px">
               <Setting />
@@ -51,9 +57,59 @@
 
       <el-main>
         <el-scrollbar>
-          <div class="welcome-content" v-if="!showTestInfo && !showMajorPlan && !showServiceCenter && !showInternship">
+          <div class="welcome-content" v-if="!showTestInfo && !showMajorPlan && !showServiceCenter && !showInternship && !showMaterials">
             <h1>欢迎来到自学考试计划管理系统</h1>
             <p>请从左侧菜单选择您要使用的功能模块</p>
+          </div>
+          
+          <!-- 教学资料 -->
+          <div v-if="showMaterials" class="materials-container">
+            <div class="materials-header">
+              <div class="materials-header-controls">
+                <div class="left-controls">
+                  <el-button type="primary" class="back-button big-action-btn" @click="showMaterials = false; showServiceCenter = true">
+                    <el-icon><Back /></el-icon> 返回
+                  </el-button>
+                </div>
+                <h2>教学资料</h2>
+                <div class="right-controls">
+                  <el-input
+                    v-model="materialsSearchQuery"
+                    placeholder="搜索教材名称或作者"
+                    prefix-icon="Search"
+                    clearable
+                    @input="handleMaterialsSearch"
+                    class="material-search"
+                  ></el-input>
+                </div>
+              </div>
+              <p>查看和下载课程相关教材和资料</p>
+            </div>
+            
+            <div class="materials-list">
+              <div v-for="material in filteredMaterialsList.length > 0 || materialsSearchQuery ? filteredMaterialsList : materialsList" :key="material.id" class="material-card">
+                <div class="material-cover">
+                  <img :src="material.coverImage" alt="教材封面" />
+                </div>
+                <div class="material-info">
+                  <h3>{{ material.title }}</h3>
+                  <div class="material-meta">
+                    <span>作者：{{ material.author }}</span>
+                    <span>出版社：{{ material.publisher }}</span>
+                    <span>出版年份：{{ material.year }}</span>
+                  </div>
+                  <p class="material-desc">{{ material.description }}</p>
+                  <div class="material-action">
+                    <el-button type="primary" class="big-action-btn" @click="showTextbookDetails(material)">
+                      <el-icon><InfoFilled /></el-icon> 教材详情
+                    </el-button>
+                    <el-button type="primary" class="big-action-btn" @click="handleDownload(material)">
+                      <el-icon><Download /></el-icon> 下载教材
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- 服务中心 -->
@@ -281,8 +337,11 @@
           </div>
           
           <!-- 专业计划 -->
-          <div class="major-plan-header" v-if="showMajorPlan">
+          <div class="test-info-header" v-if="showMajorPlan">
             <h2>发布专业计划</h2>
+          </div>
+
+          <div v-if="showMajorPlan" class="major-plan-content">
             <el-form :model="majorPlanForm" :rules="majorPlanRules" ref="majorPlanFormRef" label-width="120px" class="major-plan-form" hide-required-asterisk>
               <el-form-item label="学科名称" prop="name">
                 <el-input v-model="majorPlanForm.name" placeholder="请输入学科名称"></el-input>
@@ -312,17 +371,6 @@
                 <el-button size="large" class="big-action-btn" @click="resetMajorPlanForm">重置</el-button>
               </el-form-item>
             </el-form>
-            
-            <div class="recent-plans" v-if="recentPlans.length > 0">
-              <h3>最近添加的专业计划</h3>
-              <el-table :data="recentPlans" style="margin-top: 20px">
-                <el-table-column prop="name" label="学科名称" align="center"></el-table-column>
-                <el-table-column prop="major" label="开设专业" align="center"></el-table-column>
-                <el-table-column prop="year" label="学年" align="center"></el-table-column>
-                <el-table-column prop="term" label="学期" align="center"></el-table-column>
-                <el-table-column prop="credit" label="学分" align="center"></el-table-column>
-              </el-table>
-            </div>
           </div>
           <el-table v-if="showTestInfo" :data="filteredTestInfoList.length > 0 || testSearchQuery ? filteredTestInfoList : testInfoList" style="margin: 30px 0" :row-class-name="getTestRowClassName">
             <el-table-column prop="majorId" label="学科ID" align="center" />
@@ -454,6 +502,20 @@
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="editForm.phone" autocomplete="off" />
         </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editForm.email" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="头像" prop="avatar">
+          <el-upload
+            class="avatar-uploader"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleAvatarChange">
+            <img v-if="editForm.avatar" :src="editForm.avatar" class="avatar-preview" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+        </el-form-item>
         <el-form-item label="用户类型" prop="userType">
           <el-select v-model="editForm.userType" placeholder="请选择用户类型">
             <el-option label="教育局" :value="2" />
@@ -483,13 +545,43 @@
         </div>
       </div>
     </el-dialog>
+
+    <el-dialog v-model="textbookDetailsDialogVisible" title="教材详情" width="800px" top="5vh">
+      <div class="textbook-details-container">
+        <div class="textbook-details-header">
+          <div class="textbook-cover-large">
+            <img :src="currentTextbook?.coverImage" alt="教材封面" />
+          </div>
+          <div class="textbook-title-section">
+            <h2>{{ currentTextbook?.title }}</h2>
+            <p v-if="currentTextbook?.edition">{{ currentTextbook?.edition }}</p>
+          </div>
+        </div>
+        
+        <el-table :data="textbookTableData" stripe border class="textbook-details-table">
+          <el-table-column label="属性" prop="label" width="180" />
+          <el-table-column label="内容" prop="value" />
+        </el-table>
+        
+        <div class="textbook-description-section">
+          <h3>教材简介</h3>
+          <p>{{ currentTextbook?.description }}</p>
+        </div>
+        
+        <div class="textbook-actions">
+          <el-button type="primary" class="big-action-btn" @click="handleDownload(currentTextbook)">
+            <el-icon><Download /></el-icon> 下载教材
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
   </el-container>
 </template>
 
 <script>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
-import { Document, School, Setting, Service, Connection, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, ChatDotRound, Search, Plus } from '@element-plus/icons-vue'
+import { Document, School, Setting, Service, Connection, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, ChatDotRound, Search, Plus, Notebook, Download, Back, InfoFilled } from '@element-plus/icons-vue'
 
 export default {
   name: 'Teach',
@@ -508,14 +600,20 @@ export default {
     Wallet,
     ChatDotRound,
     Search,
-    Plus
+    Plus,
+    Notebook,
+    Download,
+    Back,
+    InfoFilled
   },
   data() {
     return {
       username: this.$route.query.username || '',
       realName: '',
+      userAvatar: '',
+      userOnlineStatus: 0,
       editDialog: false,
-      editForm: { id: null, username: '', password: '', realName: '', phone: '', userType: null },
+      editForm: { id: null, username: '', password: '', realName: '', phone: '', userType: null, email: '', avatar: '', onlineStatus: 0 },
       editRules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -549,28 +647,28 @@ export default {
       showServiceCenter: false,
       serviceList: [
         {
-          name: '勤工俭学',
-          icon: 'Money',
-          description: '校内外勤工俭学岗位信息及申请',
-          path: '/work-study'
-        },
-        {
-          name: '助学金',
-          icon: 'Wallet',
-          description: '国家助学金、奖学金申请及发放查询',
-          path: '/scholarship'
-        },
-        {
           name: '教学资料',
-          icon: 'Collection',
+          icon: 'Reading',
           description: '课程资料、教材电子版下载',
           path: '/materials'
+        },
+        {
+          name: '学习辅导',
+          icon: 'Notebook',
+          description: '一对一在线辅导和答疑',
+          path: '/tutoring'
         },
         {
           name: '校园活动',
           icon: 'Promotion',
           description: '各类校园文体活动报名',
           path: '/activities'
+        },
+        {
+          name: '考试培训',
+          icon: 'Collection',
+          description: '考前培训和模拟考试',
+          path: '/training'
         },
         {
           name: '校园设施',
@@ -589,6 +687,18 @@ export default {
           icon: 'Coffee',
           description: '食堂、超市等生活服务信息',
           path: '/life-services'
+        },
+        {
+          name: '勤工俭学',
+          icon: 'Money',
+          description: '校内外勤工俭学岗位信息及申请',
+          path: '/work-study'
+        },
+        {
+          name: '助学金',
+          icon: 'Wallet',
+          description: '国家助学金、奖学金申请及发放查询',
+          path: '/scholarship'
         },
         {
           name: '联系我们',
@@ -636,7 +746,6 @@ export default {
           { type: 'number', min: 0, message: '学分不能为负数', trigger: 'blur' }
         ]
       },
-      recentPlans: [],
       deleteConfirmVisible: false,
       currentDeleteRow: null,
       showInternship: false,
@@ -733,23 +842,63 @@ export default {
           border: '4px solid #409EFF',
         },
       ],
+      showMaterials: false,
+      materialsList: [],
+      materialsSearchQuery: '',
+      filteredMaterialsList: [],
+      textbookDetailsDialogVisible: false,
+      currentTextbook: null,
+    }
+  },
+  computed: {
+    textbookTableData() {
+      if (!this.currentTextbook) return [];
+      
+      return [
+        { label: '作者', value: this.currentTextbook.author || '未知' },
+        { label: '出版社', value: this.currentTextbook.publisher || '未知' },
+        { label: '出版年份', value: this.currentTextbook.year || '未知' },
+        { label: '版本', value: this.currentTextbook.edition || '未知' },
+      ];
     }
   },
   methods: {
     goLogin() {
-      this.$router.push({ name: 'Login' })
+      // 获取URL参数中的userId
+      const userId = this.$route.query.userId;
+      if (userId) {
+        // 调用登出API更新在线状态
+        axios.post(`http://localhost:8080/api/user/logout?userId=${userId}`)
+          .then(() => {
+            // 无论成功与否都跳转到登录页
+            this.$router.push({ name: 'Login' });
+          })
+          .catch(error => {
+            console.error('登出失败:', error);
+            // 即使失败也跳转到登录页
+            this.$router.push({ name: 'Login' });
+          });
+      } else {
+        // 没有userId直接跳转
+        this.$router.push({ name: 'Login' });
+      }
     },
     editProfile() {
       axios.get('http://localhost:8080/api/user/getUser').then(res => {
         const users = Array.isArray(res.data) ? res.data.map(u => ({
           ...u,
           userType: u.userType ?? u.user_type,
-          realName: u.realName ?? u.real_name
+          realName: u.realName ?? u.real_name,
+          onlineStatus: u.onlineStatus ?? u.online_status,
+          avatar: u.avatar ?? u.avatar_url,
+          email: u.email ?? ''
         })) : [];
         const currentUser = users.find(u => u.username === this.username);
         if (currentUser) {
           this.editForm = { ...currentUser };
           this.realName = currentUser.realName;
+          this.userAvatar = currentUser.avatar || '/src/assets/default-avatar.jpg';
+          this.userOnlineStatus = currentUser.onlineStatus;
           this.editDialog = true;
         } else {
           ElMessage.error('获取用户信息失败');
@@ -764,6 +913,8 @@ export default {
           this.editDialog = false;
           this.username = this.editForm.username;
           this.realName = this.editForm.realName;
+          this.userAvatar = this.editForm.avatar;
+          this.userOnlineStatus = this.editForm.onlineStatus;
           setTimeout(() => {
             this.$router.push({ name: 'Login' });
           }, 800);
@@ -777,6 +928,7 @@ export default {
       this.showMajorPlan = false;
       this.showServiceCenter = false;
       this.showInternship = false;
+      this.showMaterials = false;
       
       if (menu === 'testInfo') {
         axios.get('http://localhost:8080/api/testInfo/getTestInfo')
@@ -931,8 +1083,6 @@ export default {
           })
           .then(() => {
             ElMessage.success('专业计划发布成功');
-            // 添加到最近添加列表
-            this.recentPlans.unshift({...this.majorPlanForm});
             // 重置表单
             this.resetMajorPlanForm();
           })
@@ -1041,10 +1191,13 @@ export default {
         this.contactDialogVisible = true;
         return;
       }
-      ElMessage({
-        message: `您点击了${service.name}，该功能正在开发中...`,
-        type: 'info'
-      });
+      if (service.name === '教学资料') {
+        this.loadTextbooksData();
+        this.showServiceCenter = false;
+        this.showMaterials = true;
+      } else {
+        ElMessage.info(`${service.name}功能正在开发中...`);
+      }
     },
     
     // 加载实习数据
@@ -1206,6 +1359,101 @@ export default {
         }
       });
     },
+    handleMaterialsSearch() {
+      this.applyMaterialsFilters();
+    },
+    
+    applyMaterialsFilters() {
+      // Start with all materials
+      let filtered = [...this.materialsList];
+      
+      // Apply search filter if there's a search query
+      if (this.materialsSearchQuery.trim()) {
+        const query = this.materialsSearchQuery.trim().toLowerCase();
+        filtered = filtered.filter(item => {
+          return (
+            (item.title && item.title.toLowerCase().includes(query)) || 
+            (item.author && item.author.toLowerCase().includes(query))
+          );
+        });
+      }
+      
+      // If no filters applied and no search, return empty array to display all items
+      if (!this.materialsSearchQuery.trim()) {
+        this.filteredMaterialsList = [];
+        return;
+      }
+      
+      this.filteredMaterialsList = filtered;
+    },
+    
+    loadTextbooksData() {
+      axios.get('http://localhost:8080/api/textbook/getTextbooks')
+        .then(res => {
+          this.materialsList = res.data.map(textbook => ({
+            id: textbook.id,
+            title: textbook.title,
+            author: textbook.author,
+            publisher: textbook.publisher,
+            year: textbook.publishYear,
+            description: textbook.description,
+            downloadUrl: textbook.downloadUrl,
+            coverImage: textbook.coverImagePath || "/src/assets/logo.svg",
+            edition: textbook.edition
+          }));
+        })
+        .catch(error => {
+          console.error('获取教材信息失败:', error);
+          ElMessage.error('获取教材信息失败');
+          // 如果API调用失败，使用默认数据
+          this.materialsList = [
+            {
+              id: 1,
+              title: "高等数学（第七版）",
+              author: "同济大学数学系",
+              publisher: "高等教育出版社",
+              year: "2020",
+              description: "本教材全面系统地阐述了高等数学的基本内容，包括函数、极限、微积分、微分方程等。",
+              downloadUrl: "http://example.com/download/math.pdf",
+              coverImage: "/src/assets/logo.svg",
+              edition: "第七版"
+            },
+            // ... other default items ...
+          ];
+        });
+    },
+    
+    showTextbookDetails(textbook) {
+      this.currentTextbook = textbook;
+      this.textbookDetailsDialogVisible = true;
+    },
+    
+    handleDownload(material) {
+      if (!material.downloadUrl) {
+        ElMessage.warning('该教材暂无下载链接');
+        return;
+      }
+      
+      let url = material.downloadUrl;
+      // 确保URL有协议前缀
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'http://' + url;
+      }
+      
+      try {
+        window.open(url, '_blank');
+      } catch (error) {
+        console.error('打开下载链接失败:', error);
+        ElMessage.error('打开下载链接失败，请检查链接是否有效');
+      }
+    },
+    handleAvatarChange(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.editForm.avatar = e.target.result;
+      };
+      reader.readAsDataURL(file.raw);
+    },
   },
   mounted() {
     // 自动获取当前用户真实姓名
@@ -1213,11 +1461,16 @@ export default {
       const users = Array.isArray(res.data) ? res.data.map(u => ({
         ...u,
         userType: u.userType ?? u.user_type,
-        realName: u.realName ?? u.real_name
+        realName: u.realName ?? u.real_name,
+        onlineStatus: u.onlineStatus ?? u.online_status,
+        avatar: u.avatar ?? u.avatar_url,
+        email: u.email ?? ''
       })) : [];
       const currentUser = users.find(u => u.username === this.username);
       if (currentUser) {
         this.realName = currentUser.realName;
+        this.userAvatar = currentUser.avatar || '/src/assets/default-avatar.jpg';
+        this.userOnlineStatus = currentUser.onlineStatus;
       }
     });
   }
@@ -1432,9 +1685,13 @@ export default {
   text-align: center;
 }
 
+.major-plan-content {
+  padding: 30px;
+}
+
 .major-plan-form {
-  max-width: 600px;
-  margin: 30px auto;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 30px;
   background: white;
   border-radius: 12px;
@@ -1658,23 +1915,13 @@ export default {
   height: 48px;
   flex: 1;
 }
-.major-plan-header {
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.major-plan-header h2 {
-  margin: 0 0 15px 0;
-  font-size: 2rem;
-  text-align: center;
+.major-plan-content {
+  padding: 30px;
 }
 
 .major-plan-form {
-  max-width: 600px;
-  margin: 30px auto;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 30px;
   background: white;
   border-radius: 12px;
@@ -1694,39 +1941,6 @@ export default {
 
 .major-plan-form .el-select {
   width: 100%;
-}
-
-.recent-plans {
-  max-width: 800px;
-  margin: 30px auto;
-  padding: 30px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-}
-
-.recent-plans h3 {
-  color: #444;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.recent-plans .el-table {
-  margin-top: 20px;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.recent-plans .el-table th {
-  background-color: #f5f7fa;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #444;
-}
-
-.recent-plans .el-table td {
-  font-size: 1.1rem;
 }
 
 /* 服务中心样式 */
@@ -1858,5 +2072,283 @@ export default {
   font-size: 1.5em;
   margin-bottom: 8px;
   color: #666;
+}
+
+.materials-container {
+  padding: 20px;
+}
+
+.materials-header {
+  text-align: center;
+  margin-bottom: 40px; /* 增加底部间距 */
+  background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%);
+  padding: 20px 20px 40px 20px; /* 增加底部内边距 */
+  border-radius: 8px;
+  color: white;
+  position: relative;
+}
+
+.materials-header h2 {
+  font-size: 2rem;
+  margin: 0 0 15px 0;
+  text-align: center;
+}
+
+.materials-header p {
+  font-size: 1.2rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.materials-header-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  position: relative;
+  height: 60px; /* 增加高度 */
+}
+
+.materials-header-controls h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  z-index: 1;
+  top: 10%; /* 位置稍微上移 */
+}
+
+.left-controls {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  left: 0;
+  top: 110%; /* 下移返回按钮 */
+  transform: translateY(-50%);
+}
+
+.right-controls {
+  position: absolute;
+  right: 0;
+  top: 110%; /* 下移搜索框 */
+  transform: translateY(-50%);
+  width: 500px;
+}
+
+.right-controls .el-input__wrapper {
+  padding: 0 15px;
+}
+
+.right-controls .el-input__inner {
+  font-size: 1.2rem;
+  height: 48px;
+  border-radius: 8px;
+  line-height: 48px;
+}
+
+.right-controls .el-input {
+  font-size: 1.2rem;
+  height: 48px;
+}
+
+.back-button {
+  margin-right: 20px;
+}
+
+.materials-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(700px, 1fr));
+  gap: 20px;
+}
+
+.material-card {
+  display: flex;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.material-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+}
+
+.material-cover {
+  flex: 0 0 150px;
+  margin-right: 20px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.material-cover img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.material-info {
+  flex: 1;
+  position: relative;
+  padding-bottom: 60px; /* 为按钮预留空间 */
+}
+
+.material-info h3 {
+  font-size: 1.5rem;
+  margin: 0 0 10px;
+  color: #333;
+}
+
+.material-meta {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  gap: 15px;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.material-desc {
+  line-height: 1.6;
+  color: #666;
+  margin-bottom: 15px;
+  max-height: 80px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.material-action {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  gap: 10px;
+}
+
+.textbook-details {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.textbook-cover {
+  width: 150px;
+  height: 200px;
+  flex-shrink: 0;
+  background: #f5f7fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.textbook-cover img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.textbook-info {
+  flex-grow: 1;
+}
+
+.textbook-info h3 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.textbook-meta {
+  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 1.1rem;
+  color: #606266;
+}
+
+.textbook-desc {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #606266;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+.user-avatar {
+  margin-right: 8px;
+}
+
+.status-tag {
+  margin-left: 8px;
+}
+
+.avatar-uploader {
+  width: 100%;
+  text-align: center;
+}
+
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 100px;
+  height: 100px;
+  line-height: 100px;
+  text-align: center;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  display: block;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  margin: 0 auto;
+}
+
+::v-deep .status-tag {
+  font-size: 1.8rem !important;
+  font-weight: bold !important;
+  padding: 15px 20px !important;
+  border-width: 2px !important;
+  border-radius: 8px !important;
+  min-height: 48px !important;
+  line-height: 1.8 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+::v-deep .status-tag.el-tag--info {
+  border-color: #909399 !important;
+  color: #606266 !important;
+}
+
+::v-deep .status-tag.el-tag--warning {
+  border-color: #e6a23c !important;
+  color: #e6a23c !important;
+}
+
+::v-deep .status-tag.el-tag--success {
+  border-color: #67c23a !important;
+  color: #67c23a !important;
 }
 </style> 

@@ -33,6 +33,20 @@
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="registerForm.phone" autocomplete="off" />
         </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="registerForm.email" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="头像" prop="avatar">
+          <el-upload
+            class="avatar-uploader"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleRegisterAvatarChange">
+            <img v-if="registerForm.avatar" :src="registerForm.avatar" class="avatar-preview" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
+        </el-form-item>
         <el-form-item label="用户类型" prop="userType">
           <el-select v-model="registerForm.userType" placeholder="请选择用户类型">
             <el-option label="教育局" :value="2" />
@@ -48,28 +62,51 @@
 
     <!-- 管理员用户表格 -->
     <el-card v-if="isAdmin" class="user-table-card">
-      <div class="user-table-title">用户信息管理</div>
-      <el-table :data="userList" style="width: 100%; margin-top: 20px;">
-        <el-table-column prop="id" label="编号" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" width="120" align="center" />
-        <el-table-column prop="password" label="密码" width="120" align="center" />
-        <el-table-column prop="realName" label="真实姓名" width="120" align="center" />
-        <el-table-column prop="phone" label="手机号" width="140" align="center" />
-        <el-table-column prop="userType" label="用户类型" width="120" align="center">
-          <template #default="scope">
-            <el-tag v-if="scope.row.userType === 1" type="danger">管理员</el-tag>
-            <el-tag v-else-if="scope.row.userType === 2" type="warning">教育局</el-tag>
-            <el-tag v-else-if="scope.row.userType === 3" type="success">普通用户</el-tag>
-            <el-tag v-else type="info">未知</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" align="center">
-          <template #default="scope">
-            <el-button v-if="scope.row.username !== 'admin'" type="primary" size="small" @click="editUser(scope.row)">编辑</el-button>
-            <el-button v-if="scope.row.username !== 'admin'" type="danger" size="small" @click="deleteUser(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div class="user-table-header">
+        <div class="user-table-title">用户信息管理 <span class="user-count">(共 {{ userList.length }} 名用户)</span></div>
+        <el-button type="primary" @click="fetchUsers" size="small">刷新</el-button>
+      </div>
+      <el-scrollbar>
+        <el-table :data="userList" style="width: 100%; margin-top: 20px;">
+          <el-table-column prop="id" label="编号" width="60" align="center" />
+          <el-table-column prop="username" label="用户名" width="100" align="center" />
+          <el-table-column prop="password" label="密码" width="100" align="center" />
+          <el-table-column prop="realName" label="真实姓名" width="100" align="center" />
+          <el-table-column prop="phone" label="手机号" width="120" align="center" />
+          <el-table-column prop="email" label="邮箱" width="160" align="center" />
+          <el-table-column prop="avatar" label="头像" width="80" align="center">
+            <template #default="scope">
+              <el-avatar :src="scope.row.avatar" :size="40"></el-avatar>
+            </template>
+          </el-table-column>
+          <el-table-column prop="onlineStatus" label="状态" width="80" align="center">
+            <template #default="scope">
+              <el-tag
+                :type="scope.row.onlineStatus === 1 ? 'success' : 'info'"
+                size="small"
+                @click="toggleUserStatus(scope.row)"
+                style="cursor: pointer;"
+              >
+                {{ scope.row.onlineStatus === 1 ? '在线' : '离线' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="userType" label="用户类型" width="100" align="center">
+            <template #default="scope">
+              <el-tag v-if="scope.row.userType === 1" type="danger">管理员</el-tag>
+              <el-tag v-else-if="scope.row.userType === 2" type="warning">教育局</el-tag>
+              <el-tag v-else-if="scope.row.userType === 3" type="success">普通用户</el-tag>
+              <el-tag v-else type="info">未知</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="160" align="center">
+            <template #default="scope">
+              <el-button v-if="scope.row.username !== 'admin'" type="primary" size="small" @click="editUser(scope.row)">编辑</el-button>
+              <el-button v-if="scope.row.username !== 'admin'" type="danger" size="small" @click="deleteUser(scope.row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
     </el-card>
 
     <!-- 编辑用户弹窗 -->
@@ -86,6 +123,20 @@
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
           <el-input v-model="editForm.phone" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editForm.email" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="头像" prop="avatar">
+          <el-upload
+            class="avatar-uploader"
+            action="#"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleAvatarChange">
+            <img v-if="editForm.avatar" :src="editForm.avatar" class="avatar-preview" />
+            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+          </el-upload>
         </el-form-item>
         <el-form-item label="用户类型" prop="userType">
           <el-select v-model="editForm.userType" placeholder="请选择用户类型">
@@ -105,6 +156,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
+import { Plus } from '@element-plus/icons-vue'
 
 export default {
   data() {
@@ -115,7 +167,16 @@ export default {
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
       },
       registerDialog: false,
-      registerForm: { username: '', password: '', realName: '', phone: '', userType: null },
+      registerForm: { 
+        username: '', 
+        password: '', 
+        realName: '', 
+        phone: '', 
+        userType: null,
+        email: '',
+        avatar: '/src/assets/default-avatar.jpg',
+        onlineStatus: 0
+      },
       registerLoading: false,
       registerRules: {
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -127,7 +188,17 @@ export default {
       userList: [],
       isAdmin: false,
       editDialog: false,
-      editForm: { id: null, username: '', password: '', realName: '', phone: '', userType: null },
+      editForm: { 
+        id: null, 
+        username: '', 
+        password: '', 
+        realName: '', 
+        phone: '', 
+        userType: null,
+        email: '',
+        avatar: '/src/assets/default-avatar.jpg',
+        onlineStatus: 0
+      },
       editRules: {
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -156,36 +227,52 @@ export default {
     }
   },
   methods: {
+    handleAvatarChange(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.editForm.avatar = e.target.result;
+      };
+      reader.readAsDataURL(file.raw);
+    },
+    handleRegisterAvatarChange(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.registerForm.avatar = e.target.result;
+      };
+      reader.readAsDataURL(file.raw);
+    },
     handleLogin() {
       this.$refs.loginFormRef.validate(valid => {
         if (!valid) return
-        axios.get('http://localhost:8080/api/user/getUser').then(res => {
-          const users = Array.isArray(res.data) ? res.data.map(u => ({
-            ...u,
-            userType: u.userType ?? u.user_type,
-            realName: u.realName ?? u.real_name
-          })) : [];
-          const user = users.find(u => u.username === this.loginForm.username && u.password === this.loginForm.password)
-          if (user) {
+        
+        // 使用新的登录接口
+        axios.post('http://localhost:8080/api/user/login', {
+          username: this.loginForm.username,
+          password: this.loginForm.password
+        }).then(res => {
+          if (res.data.success) {
+            const user = res.data.user;
+            ElMessage.success('登录成功');
+            
             if (user.username === 'admin') {
-              this.isAdmin = true
-              this.userList = users
-              ElMessage.success('管理员登录成功')
+              this.isAdmin = true;
+              this.fetchUsers();
             } else {
-              ElMessage.success('登录成功')
               if (user.userType === 3) {
-                this.$router.push({ name: 'Student', query: { username: user.username } })
+                this.$router.push({ name: 'Student', query: { username: user.username, userId: user.id } });
               } else if (user.userType === 2) {
-                this.$router.push({ name: 'Teach', query: { username: user.username } })
+                this.$router.push({ name: 'Teach', query: { username: user.username, userId: user.id } });
               } else {
-                // 其他类型可自定义
-                this.$router.push({ name: 'Student', query: { username: user.username } })
+                this.$router.push({ name: 'Student', query: { username: user.username, userId: user.id } });
               }
             }
           } else {
-            ElMessage.error('用户名或密码错误')
+            ElMessage.error(res.data.message || '用户名或密码错误');
           }
-        })
+        }).catch(error => {
+          console.error('登录请求失败:', error);
+          ElMessage.error('登录失败，请稍后重试');
+        });
       })
     },
     handleRegister() {
@@ -228,7 +315,7 @@ export default {
       if (this.$refs.registerFormRef) {
         this.$refs.registerFormRef.resetFields();
       }
-      this.registerForm = { username: '', password: '', realName: '', phone: '', userType: null };
+      this.registerForm = { username: '', password: '', realName: '', phone: '', userType: null, email: '', avatar: '/src/assets/default-avatar.jpg', onlineStatus: 0 };
       this.registerLoading = false;
     },
     editUser(row) {
@@ -257,12 +344,33 @@ export default {
         })
       })
     },
+    toggleUserStatus(user) {
+      const newStatus = user.onlineStatus === 1 ? 0 : 1;
+      this.$confirm(`确定要将用户 "${user.username}" 的状态改为 ${newStatus === 1 ? '在线' : '离线'} 吗？`, '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        axios.get(`http://localhost:8080/api/user/updateOnlineStatus/${user.id}/${newStatus}`).then(() => {
+          ElMessage.success(`用户 "${user.username}" 已改为 ${newStatus === 1 ? '在线' : '离线'}`);
+          this.fetchUsers();
+        }).catch(error => {
+          console.error('更新用户状态失败:', error);
+          ElMessage.error('更新用户状态失败，请稍后重试');
+        });
+      }).catch(() => {
+        // 用户取消操作
+      });
+    },
     fetchUsers() {
       axios.get('http://localhost:8080/api/user/getUser').then(res => {
         this.userList = Array.isArray(res.data) ? res.data.map(u => ({
           ...u,
           userType: u.userType ?? u.user_type,
-          realName: u.realName ?? u.real_name
+          realName: u.realName ?? u.real_name,
+          onlineStatus: u.onlineStatus ?? u.online_status,
+          avatar: u.avatar ?? u.avatar_url,
+          email: u.email ?? ''
         })) : [];
       })
     }
@@ -294,14 +402,47 @@ export default {
   margin-bottom: 30px;
 }
 .user-table-card {
-  max-width: 900px;
+  max-width: 1200px;
   width: 100%;
   margin: 40px auto 0 auto;
   font-size: 18px;
 }
+.user-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
 .user-table-title {
   font-size: 22px;
   font-weight: bold;
-  margin-bottom: 10px;
+}
+.user-count {
+  font-size: 16px;
+  color: #606266;
+  margin-left: 10px;
+}
+.avatar-uploader {
+  width: 100%;
+  text-align: center;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 100px;
+  height: 100px;
+  line-height: 100px;
+  text-align: center;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.avatar-preview {
+  width: 100px;
+  height: 100px;
+  display: block;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
 }
 </style>
