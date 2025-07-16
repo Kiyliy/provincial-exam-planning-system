@@ -9,7 +9,7 @@
                 <el-icon><Document /></el-icon>计划管理
               </span>
             </template>
-            <el-menu-item index="1-1" @click="handleMenuClick('majorPlan')">发布专业计划</el-menu-item>
+            <el-menu-item index="1-1" @click="handleMenuClick('majorPlan')">专业计划管理</el-menu-item>
             <el-menu-item index="1-3" @click="handleMenuClick('testInfo')">制订考试计划</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="2">
@@ -20,7 +20,6 @@
             </template>
             <el-menu-item index="2-1" @click="handleMenuClick('internshipRecruit')">发布实习招募</el-menu-item>
             <el-menu-item index="2-2" @click="handleMenuClick('competitionRecruit')">发布竞赛招募</el-menu-item>
-            <el-menu-item index="2-3" @click="handleMenuClick('academicExchange')">开展学术交流</el-menu-item>
           </el-sub-menu>
           <el-menu-item index="3" @click="handleMenuClick('serviceCenter')">
             <span class="main-menu-title">
@@ -118,12 +117,11 @@
               <h2>学习服务中心</h2>
             </div>
             <div class="service-grid">
-              <div class="service-card" v-for="(service, index) in serviceList" :key="index" @click="handleServiceClick(service)">
+              <div class="service-card" v-for="(service, index) in serviceList" :key="index" @click="handleServiceClick()">
                 <el-icon class="service-icon">
                   <component :is="service.icon"></component>
                 </el-icon>
                 <div class="service-name">{{ service.name }}</div>
-                <div class="service-desc">{{ service.description }}</div>
               </div>
             </div>
           </div>
@@ -215,69 +213,73 @@
           <el-dialog
             v-model="internshipFormDialog"
             :title="internshipForm.id ? '修改实习信息' : '新增实习招募'"
-            width="650px"
+            width="600px"
+            class="arrange-dialog-beauty"
           >
-            <el-form
-              ref="internshipFormRef"
-              :model="internshipForm"
-              :rules="internshipFormRules"
-              label-width="100px"
-              label-position="left"
-              hide-required-asterisk
-            >
-              <el-form-item label="实习名称" prop="name">
-                <el-input v-model="internshipForm.name" placeholder="请输入实习名称"/>
-              </el-form-item>
-              <el-form-item label="实习方向" prop="direction">
-                <el-input v-model="internshipForm.direction" placeholder="请输入实习方向"/>
-              </el-form-item>
-              <el-form-item label="实习地点" prop="location">
-                <el-input v-model="internshipForm.location" placeholder="请输入实习地点"/>
-              </el-form-item>
-              <el-form-item label="开始时间" prop="startDate">
-                <el-date-picker
-                  v-model="internshipForm.startDate"
-                  type="date"
-                  placeholder="选择开始日期"
-                  style="width: 100%"
-                  value-format="YYYY-MM-DD"
-                  format="YYYY-MM-DD"
-                />
-              </el-form-item>
-              <el-form-item label="持续时间" prop="duration">
-                <el-input-number
-                  v-model="internshipForm.duration"
-                  :min="1"
-                  :max="365"
-                  style="width: 200px"
-                  placeholder="天数"
-                />
-              </el-form-item>
-              <el-form-item label="文档链接" prop="documentUrl">
-                <el-input v-model="internshipForm.documentUrl" placeholder="请输入文档下载链接（可选）"/>
-              </el-form-item>
-              <el-form-item label="实习单位" prop="company">
-                <el-input v-model="internshipForm.company" placeholder="请输入实习单位"/>
-              </el-form-item>
-              <el-form-item label="联系人" prop="contactPerson">
-                <el-input v-model="internshipForm.contactPerson" placeholder="请输入联系人姓名"/>
-              </el-form-item>
-              <el-form-item label="联系电话" prop="contactPhone">
-                <el-input v-model="internshipForm.contactPhone" placeholder="请输入联系电话"/>
-              </el-form-item>
-              <el-form-item label="招募状态" prop="status">
-                <el-select v-model="internshipForm.status" placeholder="请选择状态" style="width: 200px">
-                  <el-option label="招募中" value="招募中"/>
-                  <el-option label="已结束" value="已结束"/>
-                </el-select>
-              </el-form-item>
-            </el-form>
-            <template #footer>
-              <div class="dialog-footer">
-                <el-button @click="internshipFormDialog = false">取消</el-button>
-                <el-button type="primary" @click="submitInternshipForm">确认</el-button>
-              </div>
-            </template>
+            <div class="arrange-form-beauty-wrapper">
+              <el-form
+                ref="internshipFormRef"
+                :model="internshipForm"
+                :rules="internshipFormRules"
+                label-width="auto"
+                label-position="left"
+                hide-required-asterisk
+                class="arrange-form-beauty"
+              >
+                <el-form-item label="实习名称" prop="name">
+                  <el-input v-model="internshipForm.name" placeholder="请输入实习名称" />
+                </el-form-item>
+                <el-form-item label="实习方向" prop="direction">
+                  <el-input v-model="internshipForm.direction" placeholder="请输入实习方向" />
+                </el-form-item>
+                <el-form-item label="实习地点" prop="location">
+                  <el-input v-model="internshipForm.location" placeholder="请输入实习地点" />
+                </el-form-item>
+                <el-form-item label="开始时间" prop="startDate">
+                  <el-date-picker
+                    v-model="internshipForm.startDate"
+                    type="date"
+                    placeholder="选择开始日期"
+                    style="width: 100%"
+                    value-format="YYYY-MM-DD"
+                    format="YYYY-MM-DD"
+                  />
+                </el-form-item>
+                <el-form-item label="持续时间" prop="duration">
+                  <el-input-number
+                    v-model="internshipForm.duration"
+                    :min="1"
+                    :max="365"
+                    style="width: 100%"
+                    placeholder="天数"
+                  />
+                </el-form-item>
+                <el-form-item label="文档链接" prop="documentUrl">
+                  <el-input v-model="internshipForm.documentUrl" placeholder="请输入文档下载链接（可选）" />
+                </el-form-item>
+                <el-form-item label="实习单位" prop="company">
+                  <el-input v-model="internshipForm.company" placeholder="请输入实习单位" />
+                </el-form-item>
+                <el-form-item label="联系人" prop="contactPerson">
+                  <el-input v-model="internshipForm.contactPerson" placeholder="请输入联系人姓名" />
+                </el-form-item>
+                <el-form-item label="联系电话" prop="contactPhone">
+                  <el-input v-model="internshipForm.contactPhone" placeholder="请输入联系电话" />
+                </el-form-item>
+                <el-form-item label="招募状态" prop="status">
+                  <el-select v-model="internshipForm.status" placeholder="请选择状态" style="width: 100%">
+                    <el-option label="招募中" value="招募中"/>
+                    <el-option label="已结束" value="已结束"/>
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <div class="arrange-btn-group">
+                    <el-button @click="internshipFormDialog = false" class="big-action-btn">取消</el-button>
+                    <el-button type="primary" @click="submitInternshipForm" class="big-action-btn">确认</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </div>
           </el-dialog>
           
           <!-- 考试计划 -->
@@ -336,42 +338,73 @@
             </div>
           </div>
           
-          <!-- 专业计划 -->
+          <!-- 专业计划管理 -->
           <div class="test-info-header" v-if="showMajorPlan">
-            <h2>发布专业计划</h2>
+            <h2>专业计划管理</h2>
+            <div class="search-box">
+              <el-input
+                v-model="majorPlanSearchQuery"
+                placeholder="搜索学科名称或开设专业"
+                prefix-icon="Search"
+                clearable
+                @input="handleMajorPlanSearch"
+                style="width: 400px;"
+              ></el-input>
+            </div>
           </div>
-
-          <div v-if="showMajorPlan" class="major-plan-content">
-            <el-form :model="majorPlanForm" :rules="majorPlanRules" ref="majorPlanFormRef" label-width="120px" class="major-plan-form" hide-required-asterisk>
-              <el-form-item label="学科名称" prop="name">
-                <el-input v-model="majorPlanForm.name" placeholder="请输入学科名称"></el-input>
-              </el-form-item>
-              <el-form-item label="开设专业" prop="major">
-                <el-input v-model="majorPlanForm.major" placeholder="请输入开设专业"></el-input>
-              </el-form-item>
-              <el-form-item label="开设学年" prop="year">
-                <el-select v-model="majorPlanForm.year" placeholder="请选择学年">
-                  <el-option label="大一" value="一"></el-option>
-                  <el-option label="大二" value="二"></el-option>
-                  <el-option label="大三" value="三"></el-option>
-                  <el-option label="大四" value="四"></el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="开设学期" prop="term">
-                <el-radio-group v-model="majorPlanForm.term">
-                  <el-radio label="上">上学期</el-radio>
-                  <el-radio label="下">下学期</el-radio>
-                </el-radio-group>
-              </el-form-item>
-              <el-form-item label="学分" prop="credit">
-                <el-input-number v-model="majorPlanForm.credit" :min="0" :max="5" :step="0.5" :precision="1"></el-input-number>
-              </el-form-item>
-              <el-form-item>
-                <el-button type="primary" size="large" class="big-action-btn" @click="submitMajorPlan">确定</el-button>
-                <el-button size="large" class="big-action-btn" @click="resetMajorPlanForm">重置</el-button>
-              </el-form-item>
-            </el-form>
+          <el-table v-if="showMajorPlan" :data="filteredMajorPlanList.length > 0 || majorPlanSearchQuery ? filteredMajorPlanList : majorPlanList" style="margin: 30px 0" border :row-class-name="getMajorPlanRowClassName">
+            <el-table-column prop="id" label="ID" align="center" width="80"/>
+            <el-table-column prop="name" label="学科名称" align="center"/>
+            <el-table-column prop="major" label="开设专业" align="center"/>
+            <el-table-column prop="year" label="开设学年" align="center"/>
+            <el-table-column prop="term" label="开设学期" align="center"/>
+            <el-table-column prop="credit" label="学分" align="center"/>
+            <el-table-column label="操作" align="center" width="300">
+              <template #default="scope">
+                <el-button type="primary" size="small" class="big-action-btn" @click="editMajorPlan(scope.row)">编辑</el-button>
+                <el-button type="danger" size="small" class="big-action-btn" @click="confirmDeleteMajorPlan(scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div v-if="showMajorPlan" class="add-button-container" style="text-align:right;margin:20px 0 0 0;">
+            <el-button type="primary" icon="Plus" size="large" @click="showAddMajorPlanDialog">新增专业计划</el-button>
           </div>
+          <el-dialog v-model="majorPlanFormDialog" :title="majorPlanForm.id ? '编辑专业计划' : '新增专业计划'" width="600px" class="arrange-dialog-beauty">
+            <div class="arrange-form-beauty-wrapper">
+              <el-form ref="majorPlanFormRef" :model="majorPlanForm" :rules="majorPlanRules" label-width="auto" label-position="left" hide-required-asterisk class="arrange-form-beauty">
+                <el-form-item label="学科名称" prop="name">
+                  <el-input v-model="majorPlanForm.name" placeholder="请输入学科名称" />
+                </el-form-item>
+                <el-form-item label="开设专业" prop="major">
+                  <el-input v-model="majorPlanForm.major" placeholder="请输入开设专业" />
+                </el-form-item>
+                <el-form-item label="开设学年" prop="year">
+                  <el-select v-model="majorPlanForm.year" placeholder="请选择学年" style="width: 100%">
+                    <el-option label="大一" value="一"/>
+                    <el-option label="大二" value="二"/>
+                    <el-option label="大三" value="三"/>
+                    <el-option label="大四" value="四"/>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="开设学期" prop="term">
+                  <el-radio-group v-model="majorPlanForm.term">
+                    <el-radio label="上">上学期</el-radio>
+                    <el-radio label="下">下学期</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="学分" prop="credit">
+                  <el-input-number v-model="majorPlanForm.credit" :min="0" :max="5" :step="0.5" :precision="1" style="width: 100%" />
+                </el-form-item>
+                <el-form-item>
+                  <div class="arrange-btn-group">
+                    <el-button @click="majorPlanFormDialog = false" class="big-action-btn">取消</el-button>
+                    <el-button type="primary" @click="submitMajorPlanForm" class="big-action-btn">确认</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-dialog>
+          
           <el-table v-if="showTestInfo" :data="filteredTestInfoList.length > 0 || testSearchQuery ? filteredTestInfoList : testInfoList" style="margin: 30px 0" :row-class-name="getTestRowClassName">
             <el-table-column prop="majorId" label="学科ID" align="center" />
             <el-table-column prop="name" label="考试学科" width="300" align="center" />
@@ -455,33 +488,37 @@
               </template>
             </el-table-column>
           </el-table>
-          <el-dialog v-model="arrangeDialog" title="安排考试" width="400px">
-            <el-form :model="arrangeForm" :rules="arrangeFormRules" ref="arrangeFormRef" label-width="90px" hide-required-asterisk>
-              <el-form-item label="考试地点" prop="place">
-                <el-input v-model="arrangeForm.place" autocomplete="off" />
-              </el-form-item>
-              <el-form-item label="考试日期" prop="start">
-                <el-date-picker
-                  v-model="arrangeForm.start"
-                  type="date"
-                  placeholder="选择日期"
-                  style="width: 100%;"
-                  format="YYYY-MM-DD"
-                  value-format="YYYY-MM-DD"
-                />
-              </el-form-item>
-              <el-form-item label="考试时间" prop="when">
-                <el-select v-model="arrangeForm.when" placeholder="请选择第几堂">
-                  <el-option label="第一堂" value="1" />
-                  <el-option label="第二堂" value="2" />
-                  <el-option label="第三堂" value="3" />
-                </el-select>
-              </el-form-item>
-            </el-form>
-            <template #footer>
-              <el-button @click="arrangeDialog = false">取消</el-button>
-              <el-button type="primary" @click="handleArrangeConfirm">确定</el-button>
-            </template>
+          <el-dialog v-model="arrangeDialog" title="安排考试" width="600px" class="arrange-dialog-beauty">
+            <div class="arrange-form-beauty-wrapper">
+              <el-form :model="arrangeForm" :rules="arrangeFormRules" ref="arrangeFormRef" label-width="auto" hide-required-asterisk class="arrange-form-beauty">
+                <el-form-item label="考试地点" prop="place">
+                  <el-input v-model="arrangeForm.place" autocomplete="off" />
+                </el-form-item>
+                <el-form-item label="考试日期" prop="start">
+                  <el-date-picker
+                    v-model="arrangeForm.start"
+                    type="date"
+                    placeholder="选择日期"
+                    style="width: 100%"
+                    format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD"
+                  />
+                </el-form-item>
+                <el-form-item label="考试时间" prop="when">
+                  <el-select v-model="arrangeForm.when" placeholder="请选择第几堂" style="width: 100%">
+                    <el-option label="第一堂" value="1" />
+                    <el-option label="第二堂" value="2" />
+                    <el-option label="第三堂" value="3" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item>
+                  <div class="arrange-btn-group">
+                    <el-button @click="arrangeDialog = false" class="big-action-btn">取消</el-button>
+                    <el-button type="primary" @click="handleArrangeConfirm" class="big-action-btn">确定</el-button>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </div>
           </el-dialog>
         </el-scrollbar>
       </el-main>
@@ -575,13 +612,30 @@
         </div>
       </div>
     </el-dialog>
+
+    <el-dialog v-model="showAdmissionCard" title="准考证" width="600px" top="5vh" :close-on-click-modal="true">
+      <div class="admission-card-container">
+        <div class="admission-card-header">
+          <el-avatar :src="userAvatar" size="large" class="admission-avatar" style="width:100px;height:100px;margin-bottom:20px;"/>
+          <h2 style="font-size:2.2rem;margin-bottom:10px;">准考证</h2>
+        </div>
+        <el-table :data="[admissionCardInfo]" border style="font-size:1.5rem;">
+          <el-table-column prop="realName" label="姓名" align="center"/>
+          <el-table-column prop="studentId" label="学号" align="center"/>
+          <el-table-column prop="schoolId" label="学籍号" align="center"/>
+          <el-table-column prop="idCard" label="身份证号" align="center"/>
+          <el-table-column prop="phone" label="手机号" align="center"/>
+          <el-table-column prop="major" label="专业" align="center"/>
+        </el-table>
+      </div>
+    </el-dialog>
   </el-container>
 </template>
 
 <script>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
-import { Document, School, Setting, Service, Connection, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, ChatDotRound, Search, Plus, Notebook, Download, Back, InfoFilled } from '@element-plus/icons-vue'
+import { Document, School, Setting, Service, Connection, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, ChatDotRound, Search, Plus, Notebook, Download, Back, InfoFilled, Printer } from '@element-plus/icons-vue'
 
 export default {
   name: 'Teach',
@@ -604,7 +658,8 @@ export default {
     Notebook,
     Download,
     Back,
-    InfoFilled
+    InfoFilled,
+    Printer
   },
   data() {
     return {
@@ -646,66 +701,17 @@ export default {
       showTestInfo: false,
       showServiceCenter: false,
       serviceList: [
-        {
-          name: '教学资料',
-          icon: 'Reading',
-          description: '课程资料、教材电子版下载',
-          path: '/materials'
-        },
-        {
-          name: '学习辅导',
-          icon: 'Notebook',
-          description: '一对一在线辅导和答疑',
-          path: '/tutoring'
-        },
-        {
-          name: '校园活动',
-          icon: 'Promotion',
-          description: '各类校园文体活动报名',
-          path: '/activities'
-        },
-        {
-          name: '考试培训',
-          icon: 'Collection',
-          description: '考前培训和模拟考试',
-          path: '/training'
-        },
-        {
-          name: '校园设施',
-          icon: 'OfficeBuilding',
-          description: '教室、实验室等设施预约',
-          path: '/facilities'
-        },
-        {
-          name: '交通出行',
-          icon: 'Bicycle',
-          description: '校车时刻表及校园出行导航',
-          path: '/transportation'
-        },
-        {
-          name: '生活服务',
-          icon: 'Coffee',
-          description: '食堂、超市等生活服务信息',
-          path: '/life-services'
-        },
-        {
-          name: '勤工俭学',
-          icon: 'Money',
-          description: '校内外勤工俭学岗位信息及申请',
-          path: '/work-study'
-        },
-        {
-          name: '助学金',
-          icon: 'Wallet',
-          description: '国家助学金、奖学金申请及发放查询',
-          path: '/scholarship'
-        },
-        {
-          name: '联系我们',
-          icon: 'ChatDotRound',
-          description: '联系管理员、教师或技术支持',
-          path: '/contact'
-        }
+        { name: '打印准考证', icon: 'Printer' },
+        { name: '教学资料', icon: 'Reading' },
+        { name: '学习辅导', icon: 'Notebook' },
+        { name: '校园活动', icon: 'Promotion' },
+        { name: '考试培训', icon: 'Collection' },
+        { name: '校园设施', icon: 'OfficeBuilding' },
+        { name: '交通出行', icon: 'Bicycle' },
+        { name: '生活服务', icon: 'Coffee' },
+        { name: '勤工俭学', icon: 'Money' },
+        { name: '助学金', icon: 'Wallet' },
+        { name: '联系我们', icon: 'ChatDotRound' }
       ],
       arrangeDialog: false,
       arrangeForm: {
@@ -848,6 +854,11 @@ export default {
       filteredMaterialsList: [],
       textbookDetailsDialogVisible: false,
       currentTextbook: null,
+      majorPlanSearchQuery: '',
+      filteredMajorPlanList: [],
+      majorPlanList: [],
+      majorPlanFormDialog: false,
+      showAdmissionCard: false,
     }
   },
   computed: {
@@ -860,7 +871,17 @@ export default {
         { label: '出版年份', value: this.currentTextbook.year || '未知' },
         { label: '版本', value: this.currentTextbook.edition || '未知' },
       ];
-    }
+    },
+    admissionCardInfo() {
+      return {
+        realName: this.realName,
+        studentId: this.studentId || '202211XXXX',
+        schoolId: this.schoolId || 'XXXXXXXXXX',
+        idCard: this.idCard || 'XXXXXXXXXXXXX',
+        phone: this.phone || 'XXXXXXXXXXX',
+        major: '软件工程',
+      };
+    },
   },
   methods: {
     goLogin() {
@@ -945,7 +966,18 @@ export default {
             ElMessage.error('获取考试计划失败');
           });
       } else if (menu === 'majorPlan') {
-        this.showMajorPlan = true;
+        axios.get('http://localhost:8080/api/majorInfo/getMajorInfo')
+          .then(res => {
+            this.majorPlanList = Array.isArray(res.data) ? res.data : [];
+            this.filteredMajorPlanList = [];
+            this.majorPlanSearchQuery = '';
+            this.showMajorPlan = true;
+          })
+          .catch(() => {
+            this.majorPlanList = [];
+            this.showMajorPlan = true;
+            ElMessage.error('获取专业计划失败');
+          });
       } else if (menu === 'serviceCenter') {
         this.showServiceCenter = true;
       } else if (menu === 'internshipRecruit') {
@@ -1071,12 +1103,12 @@ export default {
           ElMessage.error('取消失败');
         });
     },
-    submitMajorPlan() {
+    submitMajorPlanForm() {
       this.$refs.majorPlanFormRef.validate(valid => {
         if (!valid) return;
-        
-        // 1. 先创建专业信息
+        const isUpdate = !!this.majorPlanForm.id;
         const majorInfo = {
+          id: this.majorPlanForm.id,
           name: this.majorPlanForm.name,
           major: this.majorPlanForm.major,
           year: this.majorPlanForm.year,
@@ -1086,51 +1118,50 @@ export default {
           state3: '未申报',
           state4: '未申报'
         };
-        
-        // 保存到major_info表
-        axios.post('http://localhost:8080/api/majorInfo/insertMajorInfo', majorInfo)
-          .then(res => {
-            // 获取新添加的专业ID
-            return axios.get('http://localhost:8080/api/majorInfo/getMajorInfo');
-          })
-          .then(res => {
-            const majors = Array.isArray(res.data) ? res.data : [];
-            // 找到刚添加的专业信息
-            const addedMajor = majors.find(m => 
-              m.name === majorInfo.name && 
-              m.major === majorInfo.major && 
-              m.year === majorInfo.year && 
-              m.term === majorInfo.term
-            );
-            
-            if (addedMajor && addedMajor.id) {
-              // 2. 创建考试计划
-              const testInfo = {
-                majorId: addedMajor.id,
-                name: majorInfo.name,
-                state: '未考试',
-                plan: '未安排',
-                place: '',
-                start: '',
-                when: ''
-              };
-              
-              // 保存到test_info表
-              return axios.post('http://localhost:8080/api/testInfo/insertTestInfo', testInfo);
+        const apiUrl = isUpdate
+          ? 'http://localhost:8080/api/majorInfo/updateMajorInfo'
+          : 'http://localhost:8080/api/majorInfo/insertMajorInfo';
+        axios.post(apiUrl, majorInfo)
+          .then(() => {
+            if (!isUpdate) {
+              // 新增时，查找刚插入的major，插入考试计划
+              return axios.get('http://localhost:8080/api/majorInfo/getMajorInfo')
+                .then(res => {
+                  const majors = Array.isArray(res.data) ? res.data : [];
+                  // 找到最新一条（假设id最大）
+                  const addedMajor = majors.reduce((max, cur) => cur.id > max.id ? cur : max, majors[0]);
+                  if (addedMajor) {
+                    const testInfo = {
+                      majorId: addedMajor.id,
+                      name: addedMajor.name,
+                      state: '未考试',
+                      plan: '未安排',
+                      place: '',
+                      start: '',
+                      when: ''
+                    };
+                    return axios.post('http://localhost:8080/api/testInfo/insertTestInfo', testInfo);
+                  }
+                });
             }
           })
           .then(() => {
-            ElMessage.success('专业计划发布成功');
-            // 重置表单
-            this.resetMajorPlanForm();
+            ElMessage.success(isUpdate ? '修改成功' : '添加成功');
+            this.majorPlanFormDialog = false;
+            // 重新加载数据
+            return axios.get('http://localhost:8080/api/majorInfo/getMajorInfo');
+          })
+          .then(res => {
+            this.majorPlanList = Array.isArray(res.data) ? res.data : [];
+            this.filteredMajorPlanList = [];
+            this.majorPlanSearchQuery = '';
           })
           .catch(error => {
-            console.error('添加专业计划出错:', error);
-            ElMessage.error('专业计划发布失败');
+            console.error(isUpdate ? '修改失败:' : '添加失败:', error);
+            ElMessage.error(isUpdate ? '修改失败，请重试' : '添加失败，请重试');
           });
       });
     },
-    
     resetMajorPlanForm() {
       this.$refs.majorPlanFormRef.resetFields();
     },
@@ -1218,18 +1249,8 @@ export default {
       this.filteredTestInfoList = filtered;
     },
 
-    handleServiceClick(service) {
-      if (service.name === '联系我们') {
-        this.contactDialogVisible = true;
-        return;
-      }
-      if (service.name === '教学资料') {
-        this.loadTextbooksData();
-        this.showServiceCenter = false;
-        this.showMaterials = true;
-      } else {
-        ElMessage.info(`${service.name}功能正在开发中...`);
-      }
+    handleServiceClick() {
+      this.$message.info('仅学生可查看');
     },
     
     // 加载实习数据
@@ -1479,6 +1500,79 @@ export default {
       };
       reader.readAsDataURL(file.raw);
     },
+    handleMajorPlanSearch() {
+      this.applyMajorPlanFilters();
+    },
+    
+    applyMajorPlanFilters() {
+      let filtered = [...this.majorPlanList];
+      
+      if (this.majorPlanSearchQuery.trim()) {
+        const query = this.majorPlanSearchQuery.trim().toLowerCase();
+        filtered = filtered.filter(item => {
+          return (
+            (item.name && item.name.toLowerCase().includes(query)) || 
+            (item.major && item.major.toLowerCase().includes(query))
+          );
+        });
+      }
+      
+      if (!this.majorPlanSearchQuery.trim()) {
+        this.filteredMajorPlanList = [];
+        return;
+      }
+      
+      this.filteredMajorPlanList = filtered;
+    },
+    
+    editMajorPlan(row) {
+      this.majorPlanForm = { ...row };
+      this.majorPlanFormDialog = true;
+    },
+    
+    confirmDeleteMajorPlan(row) {
+      ElMessageBox.confirm(`确定要删除"${row.name}"吗？此操作不可恢复。`, '删除确认', {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.deleteMajorPlan(row.id);
+      }).catch(() => {
+        // 用户取消删除，不执行操作
+      });
+    },
+    
+    deleteMajorPlan(id) {
+      // 先删除所有相关考试计划
+      axios.get(`http://localhost:8080/api/testInfo/deleteTestInfoByMajorId/${id}`)
+        .then(() => {
+          // 然后删除专业信息
+          return axios.get(`http://localhost:8080/api/majorInfo/deleteMajorInfo/${id}`);
+        })
+        .then(() => {
+          ElMessage.success('删除成功');
+          this.majorPlanList = this.majorPlanList.filter(item => item.id !== id);
+        })
+        .catch(error => {
+          console.error('删除失败:', error);
+          ElMessage.error('删除失败，请重试');
+        });
+    },
+    showAddMajorPlanDialog() {
+      this.majorPlanForm = {
+        id: null,
+        name: '',
+        major: '',
+        year: '',
+        term: '',
+        credit: 0
+      };
+      this.majorPlanFormDialog = true;
+    },
+    getMajorPlanRowClassName({ row }) {
+      // 可根据需要高亮某些行，这里保持普通
+      return '';
+    },
   },
   mounted() {
     // 自动获取当前用户真实姓名
@@ -1620,6 +1714,12 @@ export default {
 ::v-deep .el-table th, 
 ::v-deep .el-table td {
   font-size: 1.5rem !important;
+  height: 60px !important;
+  text-align: center !important;
+  border-right: none !important;
+}
+::v-deep .el-table th:last-child, ::v-deep .el-table td:last-child {
+  border-right: none !important;
 }
 ::v-deep .el-table__row {
   height: 64px !important;
@@ -2375,5 +2475,88 @@ export default {
 ::v-deep .status-tag.el-tag--success {
   border-color: #67c23a !important;
   color: #67c23a !important;
+}
+
+.admission-card-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 0 10px 0;
+}
+.admission-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+::v-deep .el-table {
+  font-size: 1.5rem !important;
+  border-radius: 12px !important;
+  margin-top: 10px;
+  width: 100%;
+}
+::v-deep .el-table th, ::v-deep .el-table td {
+  font-size: 1.5rem !important;
+  height: 60px !important;
+  text-align: center !important;
+}
+::v-deep .el-dialog__body {
+  padding: 0 30px 30px 30px !important;
+}
+.arrange-dialog-beauty >>> .el-dialog {
+  border-radius: 18px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+  background: #fff !important;
+}
+.arrange-form-beauty-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0 0 0;
+}
+.arrange-form-beauty {
+  width: 100%;
+  max-width: 480px;
+  /* background: #fff; */
+  /* border-radius: 14px; */
+  /* box-shadow: 0 2px 12px rgba(0,0,0,0.08); */
+  padding: 0 0 0 0;
+}
+.arrange-form-beauty >>> .el-form-item {
+  margin-bottom: 28px !important;
+}
+.arrange-form-beauty >>> .el-form-item__label {
+  font-size: 1.1rem !important;
+  color: #333 !important;
+  font-weight: 500;
+}
+.arrange-form-beauty >>> .el-input__inner,
+.arrange-form-beauty >>> .el-input,
+.arrange-form-beauty >>> .el-date-editor,
+.arrange-form-beauty >>> .el-date-picker,
+.arrange-form-beauty >>> .el-select,
+.arrange-form-beauty >>> .el-select__wrapper {
+  font-size: 1.1rem !important;
+  min-height: 40px !important;
+  border-radius: 8px !important;
+}
+.arrange-form-beauty >>> .el-input__wrapper {
+  min-height: 40px !important;
+  border-radius: 8px !important;
+}
+.arrange-form-beauty >>> .el-select-dropdown__item {
+  font-size: 1.1rem !important;
+  min-height: 40px !important;
+}
+.arrange-form-beauty >>> .el-picker-panel {
+  font-size: 1.1rem !important;
+  min-width: 320px !important;
+  min-height: 180px !important;
+}
+.arrange-btn-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 18px;
+  width: 100%;
 }
 </style> 
