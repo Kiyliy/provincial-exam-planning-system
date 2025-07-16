@@ -10,6 +10,7 @@ public interface TestInfoMapper {
     void insertTestInfo(TestInfo testInfo);
     void updateTestInfo(TestInfo testInfo);
     void deleteTestInfo(Integer id);
+    void deleteTestInfoByMajorId(Integer majorId);
     TestInfo getTestInfoById(Integer id);
     TestInfo getTestInfoByMajorId(Integer majorId);
 } 

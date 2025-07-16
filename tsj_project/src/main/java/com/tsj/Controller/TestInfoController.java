@@ -45,4 +45,9 @@ public class TestInfoController {
     public TestInfo getTestInfoByMajorId(@RequestParam Integer majorId){
         return testInfoService.getTestInfoByMajorId(majorId);
     }
+
+    @GetMapping("/deleteTestInfoByMajorId/{majorId}")
+    public void deleteTestInfoByMajorId(@PathVariable Integer majorId){
+        testInfoService.deleteTestInfoByMajorId(majorId);
+    }
 } 

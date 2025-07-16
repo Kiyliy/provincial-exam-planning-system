@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tsj.Mapper.CompetitionMapper">
+    <resultMap id="competitionMap" type="com.tsj.project.Competition">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="organizer" column="organizer"/>
+        <result property="deadline" column="deadline"/>
+        <result property="level" column="level"/>
+        <result property="description" column="description"/>
+        <result property="category" column="category"/>
+        <result property="signupLink" column="signup_link"/>
+    </resultMap>
+
+    <select id="getCompetitions" resultMap="competitionMap">
+        SELECT id, name, organizer, deadline, level, description, category, signup_link FROM competitions
+    </select>
+    <select id="getCompetitionById" parameterType="integer" resultMap="competitionMap">
+        SELECT id, name, organizer, deadline, level, description, category, signup_link FROM competitions WHERE id = #{id}
+    </select>
+    <insert id="insertCompetition" parameterType="com.tsj.project.Competition">
+        INSERT INTO competitions (name, organizer, deadline, level, description, category, signup_link)
+        VALUES (#{name}, #{organizer}, #{deadline}, #{level}, #{description}, #{category}, #{signupLink})
+    </insert>
+    <update id="updateCompetition" parameterType="com.tsj.project.Competition">
+        UPDATE competitions
+        SET name = #{name}, organizer = #{organizer}, deadline = #{deadline}, level = #{level}, description = #{description}, category = #{category}, signup_link = #{signupLink}
+        WHERE id = #{id}
+    </update>
+    <delete id="deleteCompetition" parameterType="integer">
+        DELETE FROM competitions WHERE id = #{id}
+    </delete>
+</mapper> 

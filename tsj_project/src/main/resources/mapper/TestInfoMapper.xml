@@ -65,4 +65,8 @@
         where t.major_id = #{majorId}
     </select>
 
+    <delete id="deleteTestInfoByMajorId" parameterType="java.lang.Integer">
+        delete from test_info where major_id = #{majorId}
+    </delete>
+
 </mapper> 

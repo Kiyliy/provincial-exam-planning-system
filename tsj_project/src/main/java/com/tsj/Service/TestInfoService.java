@@ -37,4 +37,8 @@ public class TestInfoService {
     public TestInfo getTestInfoByMajorId(Integer majorId){
         return testInfoMapper.getTestInfoByMajorId(majorId);
     }
+
+    public void deleteTestInfoByMajorId(Integer majorId){
+        testInfoMapper.deleteTestInfoByMajorId(majorId);
+    }
 } 
