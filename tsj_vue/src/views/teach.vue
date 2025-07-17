@@ -531,7 +531,23 @@
           <el-input v-model="editForm.username" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="editForm.password" type="password" autocomplete="off" />
+          <el-input
+            v-model="editForm.password"
+            :type="editPasswordVisible ? 'text' : 'password'"
+            autocomplete="off"
+            placeholder="请输入密码"
+          >
+            <template #suffix>
+              <el-icon
+                class="password-toggle-icon"
+                @click="editPasswordVisible = !editPasswordVisible"
+                style="cursor: pointer;"
+              >
+                <View v-if="editPasswordVisible" />
+                <Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="真实姓名" prop="realName">
           <el-input v-model="editForm.realName" autocomplete="off" />
@@ -635,7 +651,7 @@
 <script>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
-import { Document, School, Setting, Service, Connection, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, ChatDotRound, Search, Plus, Notebook, Download, Back, InfoFilled, Printer } from '@element-plus/icons-vue'
+import { Document, School, Setting, Service, Connection, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, ChatDotRound, Search, Plus, Notebook, Download, Back, InfoFilled, Printer, View, Hide } from '@element-plus/icons-vue'
 
 export default {
   name: 'Teach',
@@ -659,7 +675,9 @@ export default {
     Download,
     Back,
     InfoFilled,
-    Printer
+    Printer,
+    View,
+    Hide
   },
   data() {
     return {
@@ -859,6 +877,7 @@ export default {
       majorPlanList: [],
       majorPlanFormDialog: false,
       showAdmissionCard: false,
+      editPasswordVisible: false,
     }
   },
   computed: {

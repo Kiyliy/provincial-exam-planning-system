@@ -7,7 +7,23 @@
           <el-input v-model="loginForm.username" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="loginForm.password" type="password" autocomplete="off" />
+          <el-input 
+            v-model="loginForm.password" 
+            :type="loginPasswordVisible ? 'text' : 'password'"
+            autocomplete="off"
+            placeholder="请输入密码"
+          >
+            <template #suffix>
+              <el-icon 
+                class="password-toggle-icon"
+                @click="loginPasswordVisible = !loginPasswordVisible"
+                style="cursor: pointer;"
+              >
+                <View v-if="loginPasswordVisible" />
+                <Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleLogin" style="width: 100%">登录</el-button>
@@ -25,7 +41,23 @@
           <el-input v-model="registerForm.username" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="registerForm.password" type="password" autocomplete="off" />
+          <el-input
+            v-model="registerForm.password"
+            :type="registerPasswordVisible ? 'text' : 'password'"
+            autocomplete="off"
+            placeholder="请输入密码"
+          >
+            <template #suffix>
+              <el-icon
+                class="password-toggle-icon"
+                @click="registerPasswordVisible = !registerPasswordVisible"
+                style="cursor: pointer;"
+              >
+                <View v-if="registerPasswordVisible" />
+                <Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="真实姓名" prop="realName">
           <el-input v-model="registerForm.realName" autocomplete="off" />
@@ -35,17 +67,6 @@
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <el-input v-model="registerForm.email" autocomplete="off" />
-        </el-form-item>
-        <el-form-item label="头像" prop="avatar">
-          <el-upload
-            class="avatar-uploader"
-            action="#"
-            :auto-upload="false"
-            :show-file-list="false"
-            :on-change="handleRegisterAvatarChange">
-            <img v-if="registerForm.avatar" :src="registerForm.avatar" class="avatar-preview" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
         </el-form-item>
         <el-form-item label="用户类型" prop="userType">
           <el-select v-model="registerForm.userType" placeholder="请选择用户类型">
@@ -116,7 +137,23 @@
           <el-input v-model="editForm.username" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="editForm.password" type="password" autocomplete="off" />
+          <el-input
+            v-model="editForm.password"
+            :type="editPasswordVisible ? 'text' : 'password'"
+            autocomplete="off"
+            placeholder="请输入密码"
+          >
+            <template #suffix>
+              <el-icon
+                class="password-toggle-icon"
+                @click="editPasswordVisible = !editPasswordVisible"
+                style="cursor: pointer;"
+              >
+                <View v-if="editPasswordVisible" />
+                <Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="真实姓名" prop="realName">
           <el-input v-model="editForm.realName" autocomplete="off" />
@@ -156,7 +193,7 @@
 <script>
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, View, Hide } from '@element-plus/icons-vue'
 
 export default {
   data() {
@@ -223,7 +260,10 @@ export default {
         realName: [{ required: true, message: '请输入真实姓名', trigger: 'blur' }],
         phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
         userType: [{ required: true, message: '请选择用户类型', trigger: 'change' }]
-      }
+      },
+      loginPasswordVisible: false,
+      registerPasswordVisible: false,
+      editPasswordVisible: false,
     }
   },
   methods: {
@@ -280,6 +320,7 @@ export default {
         this.registerLoading = false;
         return;
       }
+      this.registerForm.avatar = '/src/assets/default-avatar.jpg';
       this.$refs.registerFormRef.validate(valid => {
         if (!valid) {
           this.registerLoading = false;

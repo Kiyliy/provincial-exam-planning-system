@@ -865,7 +865,23 @@
           <el-input v-model="editForm.username" autocomplete="off" />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="editForm.password" type="password" autocomplete="off" />
+          <el-input
+            v-model="editForm.password"
+            :type="editPasswordVisible ? 'text' : 'password'"
+            autocomplete="off"
+            placeholder="请输入密码"
+          >
+            <template #suffix>
+              <el-icon
+                class="password-toggle-icon"
+                @click="editPasswordVisible = !editPasswordVisible"
+                style="cursor: pointer;"
+              >
+                <View v-if="editPasswordVisible" />
+                <Hide v-else />
+              </el-icon>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="真实姓名" prop="realName">
           <el-input v-model="editForm.realName" autocomplete="off" />
@@ -1046,7 +1062,7 @@
 <script>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
-import { Document, School, Setting, Search, Notebook, Reading, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, Connection, Service, ChatDotRound, Download, Back, InfoFilled, Plus, Phone, Message, Position, Calendar, Trophy, Link, Printer } from '@element-plus/icons-vue'
+import { Document, School, Setting, Search, Notebook, Reading, Money, Bicycle, Coffee, Collection, OfficeBuilding, Promotion, Wallet, Connection, Service, ChatDotRound, Download, Back, InfoFilled, Plus, Phone, Message, Position, Calendar, Trophy, Link, Printer, View, Hide } from '@element-plus/icons-vue'
 
 export default {
   name: 'Student',
@@ -1077,7 +1093,9 @@ export default {
     Calendar,
     Trophy,
     Link,
-    Printer
+    Printer,
+    View,
+    Hide
   },
   data() {
     return {
@@ -1475,6 +1493,7 @@ export default {
         { id: 9, name: 'E102', type: '其他', location: '行政楼E', status: '已租用', renting: false },
         { id: 10, name: 'F201', type: '其他', location: '体育馆F', status: '空闲', renting: false },
       ],
+      editPasswordVisible: false,
     }
   },
   computed: {
@@ -2160,6 +2179,8 @@ export default {
                           user.id === 7 ? '上单' :
                           user.id === 8 ? '辅助' :
                           user.id === 9 ? '上单' :
+                          user.id === 10 ? '上单' :
+                          user.id === 11 ? '中单' :
                           (user.profession || '教师')
             })) : [];
         })
@@ -2527,6 +2548,10 @@ export default {
 .clickable-tag {
   cursor: pointer;
   transition: all 0.3s;
+  font-size: 1.2rem;
+  padding: 8px 16px;
+  min-height: 36px;
+  border-radius: 8px;
 }
 
 .clickable-tag:hover {
@@ -3727,27 +3752,27 @@ export default {
 /* 在线和咨询右下角大号 */
 .tutor-action-row-fixed {
   position: absolute;
-  right: 32px;
-  bottom: 18px;
+  right: 16px;
+  bottom: 12px;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 12px;
   z-index: 2;
 }
 
 .tutor-status-tag-fixed {
-  font-size: 1.5rem !important;
-  padding: 10px 28px !important;
+  font-size: 1.2rem !important;
+  padding: 6px 14px !important;
   font-weight: bold;
-  border-radius: 10px !important;
-  height: 2.6em;
+  border-radius: 8px !important;
+  height: 2em;
   display: flex;
   align-items: center;
 }
 
 .tutor-consult-btn {
-  font-size: 1.5rem !important;
-  padding: 0.8em 2.2em !important;
+  font-size: 1.1rem !important;
+  padding: 0.4em 1.2em !important;
 }
 
 .campus-activity-container {
